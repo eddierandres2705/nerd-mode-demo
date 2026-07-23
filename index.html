@@ -34,6 +34,9 @@
   .sw.circ{border-radius:50%;}
   .sw.picked{border-color:var(--carbon); border-width:3px;}
   #exitBtn{position:absolute; top:54px; right:16px; z-index:6; width:auto; padding:5px 10px; font-size:10px; border-width:1.5px;}
+  #pauseBtn{position:absolute; top:54px; left:16px; z-index:6; width:auto; padding:5px 10px; font-size:10px; border-width:1.5px;}
+  #pause-overlay{display:none; position:absolute; inset:0; background:rgba(245,245,240,0.96); z-index:14; flex-direction:column; align-items:center; justify-content:center;}
+  #pause-overlay.show{display:flex;}
 
   #screen-game{display:none; padding:0;}
   #hud{position:absolute; top:16px; left:16px; right:16px; display:flex; justify-content:space-between; align-items:center; z-index:5;}
@@ -178,6 +181,15 @@
       <div id="avatarPreview" style="margin-bottom:10px;"></div>
       <h1 style="font-size:16px; margin:0 0 14px;">Crea tu personaje</h1>
 
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="sw bodytype picked" onclick="pickBodyType(0,this)" style="width:60px; height:60px;">
+          <svg width="28" height="34" viewBox="0 0 100 140"><rect x="32" y="24" width="36" height="28" fill="#F0C9A0"/><rect x="28" y="54" width="44" height="36" fill="#C9CACC"/><rect x="32" y="92" width="16" height="24" fill="#2C2C2A"/><rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/></svg>
+        </button>
+        <button class="sw bodytype" onclick="pickBodyType(1,this)" style="width:60px; height:60px;">
+          <svg width="28" height="34" viewBox="0 0 100 140"><rect x="32" y="24" width="36" height="28" fill="#F0C9A0"/><path d="M40,54 L60,54 L74,112 L26,112 Z" fill="#C9CACC"/></svg>
+        </button>
+      </div>
+
       <div class="tabbar">
         <div class="tab active" id="tab-hair" onclick="showTab('hair')">Cabello</div>
         <div class="tab" id="tab-shirt" onclick="showTab('shirt')">Camiseta</div>
@@ -188,6 +200,7 @@
         <button class="sw picked" onclick="pickHair(0,this)"><svg viewBox="0 20 100 30" width="34" height="16"><rect x="30" y="24" width="40" height="14" fill="#3B2A1E"/></svg></button>
         <button class="sw" onclick="pickHair(1,this)"><svg viewBox="20 -2 60 32" width="34" height="16"><rect x="30" y="14" width="40" height="8" fill="#3B2A1E"/><polygon points="32,14 38,2 44,14" fill="#3B2A1E"/><polygon points="46,14 52,2 58,14" fill="#3B2A1E"/><polygon points="60,14 66,2 72,14" fill="#3B2A1E"/></svg></button>
         <button class="sw" onclick="pickHair(2,this)"><svg viewBox="20 0 70 40" width="34" height="16"><rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/></svg></button>
+        <button class="sw" onclick="pickHair(3,this)"><svg viewBox="18 0 70 44" width="34" height="16"><rect x="30" y="10" width="40" height="10" fill="#3B2A1E"/><rect x="20" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/><rect x="70" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/></svg></button>
       </div>
 
       <div class="swrow" id="row-shirt" style="display:none;">
@@ -228,6 +241,11 @@
 
   <div class="screen" id="screen-game">
     <button id="exitBtn" onclick="endDemo()">Terminar</button>
+    <button id="pauseBtn" onclick="togglePause()">Pausa</button>
+    <div id="pause-overlay">
+      <div style="font-family:var(--display); font-weight:700; font-size:22px; color:var(--carbon); margin-bottom:20px;">Pausado</div>
+      <button onclick="togglePause()">Continuar</button>
+    </div>
     <div id="hud">
       <div id="dots">
         <div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div>
@@ -416,34 +434,54 @@ const stage=document.getElementById('stage');
 const player=document.getElementById('player');
 
 const ANIMALS=[
-  {en:'CAT', es:'gato', sound:'MEOW', emoji:'1f431'},
-  {en:'DOG', es:'perro', sound:'WOOF', emoji:'1f436'},
-  {en:'LION', es:'león', sound:'ROAR', emoji:'1f981'},
-  {en:'BIRD', es:'pájaro', sound:'TWEET', emoji:'1f426'},
-  {en:'ELEPHANT', es:'elefante', sound:null, emoji:'1f418'},
-  {en:'FISH', es:'pez', sound:null, emoji:'1f41f'}
+  {en:'CAT', es:'gato', sound:'MEOW', emoji:'🐱'},
+  {en:'DOG', es:'perro', sound:'WOOF', emoji:'🐶'},
+  {en:'LION', es:'león', sound:'ROAR', emoji:'🦁'},
+  {en:'BIRD', es:'pájaro', sound:'TWEET', emoji:'🐦'},
+  {en:'ELEPHANT', es:'elefante', sound:null, emoji:'🐘'},
+  {en:'FISH', es:'pez', sound:null, emoji:'🐟'}
 ];
 
 const COLORS=[
-  {en:'RED', es:'rojo', hex:'#D8432E', ctx:'Apples are', ctxEmoji:'1f34e'},
-  {en:'BLUE', es:'azul', hex:'#3B82F6', ctx:'Blueberries are', ctxEmoji:'1fad0'},
-  {en:'YELLOW', es:'amarillo', hex:'#F5C518', ctx:'The sun is', ctxEmoji:'1f31e'},
-  {en:'GREEN', es:'verde', hex:'#3FA796', ctx:'Leaves are', ctxEmoji:'1f343'},
-  {en:'BLACK', es:'negro', hex:'#141414', ctx:'The night is', ctxEmoji:'1f319'},
-  {en:'WHITE', es:'blanco', hex:'#FFFFFF', ctx:'Snow is', ctxEmoji:'2603'}
+  {en:'RED', es:'rojo', hex:'#D8432E', ctx:'Apples are', ctxEmoji:'🍎'},
+  {en:'BLUE', es:'azul', hex:'#3B82F6', ctx:'Blueberries are', ctxEmoji:'🫐'},
+  {en:'YELLOW', es:'amarillo', hex:'#F5C518', ctx:'The sun is', ctxEmoji:'🌞'},
+  {en:'GREEN', es:'verde', hex:'#3FA796', ctx:'Leaves are', ctxEmoji:'🍃'},
+  {en:'BLACK', es:'negro', hex:'#141414', ctx:'The night is', ctxEmoji:'🌙'},
+  {en:'WHITE', es:'blanco', hex:'#FFFFFF', ctx:'Snow is', ctxEmoji:'☃️'}
 ];
 
 const WORLDS={animals:ANIMALS, colors:COLORS};
-const IMG_BASE='https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/';
-function emojiImg(code, size){ return '<img src="'+IMG_BASE+code+'.svg" width="'+size+'" height="'+size+'" draggable="false" style="display:block;" alt="">'; }
+function emojiImg(char, size){ return '<span style="font-size:'+size+'px; line-height:1; display:block;">'+char+'</span>'; }
 function swatchSVG(hex, size){ return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="'+hex+'" stroke="#141414" stroke-width="3"/></svg>'; }
 function displayIcon(item, worldKey, size){ return worldKey==='colors' ? swatchSVG(item.hex, size) : emojiImg(item.emoji, size); }
+
+let bestVoice=null;
+const GOOD_VOICE_NAMES=['Samantha','Google US English','Ava','Allison','Susan','Karen','Moira','Google UK English Female'];
+function pickBestVoice(){
+  if(!window.speechSynthesis) return;
+  const voices=speechSynthesis.getVoices();
+  if(!voices.length) return;
+  for(const name of GOOD_VOICE_NAMES){
+    const v=voices.find(v=>v.name===name);
+    if(v){ bestVoice=v; return; }
+  }
+  const enUS=voices.find(v=>v.lang==='en-US' && !v.name.toLowerCase().includes('compact'));
+  if(enUS){ bestVoice=enUS; return; }
+  const anyEn=voices.find(v=>v.lang && v.lang.startsWith('en'));
+  if(anyEn) bestVoice=anyEn;
+}
+if(window.speechSynthesis){
+  pickBestVoice();
+  speechSynthesis.addEventListener('voiceschanged', pickBestVoice);
+}
 
 function speak(text){
   if(!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.lang='en-US'; u.rate=0.8;
+  u.lang='en-US'; u.rate=0.85; u.pitch=1.05;
+  if(bestVoice) u.voice=bestVoice;
   speechSynthesis.speak(u);
 }
 let playerName='';
@@ -453,14 +491,35 @@ let playerAge='6-8';
 const HAIR_SVGS=[
   '<rect x="30" y="10" width="40" height="14" fill="#3B2A1E"/>',
   '<rect x="30" y="14" width="40" height="8" fill="#3B2A1E"/><polygon points="32,14 38,2 44,14" fill="#3B2A1E"/><polygon points="46,14 52,2 58,14" fill="#3B2A1E"/><polygon points="60,14 66,2 72,14" fill="#3B2A1E"/>',
-  '<rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/>'
+  '<rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/>',
+  '<rect x="30" y="10" width="40" height="10" fill="#3B2A1E"/><rect x="20" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/><rect x="70" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/>'
 ];
 const ACC_SVGS=[
   '',
   '<rect x="38" y="36" width="8" height="4" fill="#141414"/><rect x="56" y="36" width="8" height="4" fill="#141414"/><rect x="46" y="37" width="10" height="2" fill="#141414"/>',
   '<rect x="28" y="10" width="44" height="10" fill="#993C1D"/><rect x="28" y="18" width="44" height="8" fill="#141414"/>'
 ];
-let hairIdx=0, shirtColor='#D8432E', accIdx=0;
+let hairIdx=0, shirtColor='#D8432E', accIdx=0, bodyType=0;
+
+function pickBodyType(type, btn){
+  bodyType=type;
+  document.querySelectorAll('.bodytype').forEach(b=>b.classList.remove('picked'));
+  btn.classList.add('picked');
+  renderPreview();
+}
+
+function bodyMarkup(){
+  if(bodyType===1){
+    return '<path d="M40,54 L60,54 L74,112 L26,112 Z" fill="'+shirtColor+'"/>'
+      + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
+      + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>';
+  }
+  return '<rect x="28" y="54" width="44" height="36" fill="'+shirtColor+'"/>'
+    + '<rect x="32" y="92" width="16" height="24" fill="#2C2C2A"/>'
+    + '<rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/>'
+    + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
+    + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>';
+}
 
 function buildAvatarSVG(w,h){
   const hair = (accIdx===2) ? '' : HAIR_SVGS[hairIdx];
@@ -471,11 +530,7 @@ function buildAvatarSVG(w,h){
     + '<rect x="58" y="34" width="6" height="6" fill="#141414"/>'
     + '<rect x="12" y="56" width="14" height="28" fill="#F0C9A0"/>'
     + '<rect x="78" y="56" width="14" height="28" fill="#F0C9A0"/>'
-    + '<rect x="28" y="54" width="44" height="36" fill="'+shirtColor+'"/>'
-    + '<rect x="32" y="92" width="16" height="24" fill="#2C2C2A"/>'
-    + '<rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/>'
-    + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
-    + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>'
+    + bodyMarkup()
     + ACC_SVGS[accIdx]
     + '</svg>';
 }
@@ -551,6 +606,23 @@ function startGame(mode){
   lastSpawn=performance.now();
   if(mode==='fire'){ requestAnimationFrame(loop); }
   else { requestAnimationFrame(tankLoop); }
+}
+
+let pausedManually=false;
+function togglePause(){
+  const ov=document.getElementById('pause-overlay');
+  if(!pausedManually){
+    if(awaitingAnswer) return; // no pausar en medio de un checkpoint
+    pausedManually=true;
+    running=false;
+    ov.classList.add('show');
+  } else {
+    pausedManually=false;
+    ov.classList.remove('show');
+    running=true;
+    lastSpawn=performance.now();
+    requestAnimationFrame(currentGame==='fire' ? loop : tankLoop);
+  }
 }
 
 function endDemo(){
@@ -773,6 +845,9 @@ function triggerNerdMode(){
     // Tank Mode: Nerd Mode se vive DENTRO del juego, nunca lo detiene
     tankNerdActive=true;
     enemies.forEach(o=>destroyEnemy(o, true));
+    setTimeout(()=>{
+      if(tankNerdActive){ spawnEnemyPatrol(); spawnEnemyPatrol(); spawnEnemyPatrol(); }
+    },150);
     document.getElementById('tankPlayer').classList.add('nerdglow');
     bigChime();
 
