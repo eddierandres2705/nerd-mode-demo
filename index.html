@@ -10,7 +10,8 @@
     --display:'Space Grotesk','Poppins',system-ui,sans-serif;
     --body:'Inter',-apple-system,sans-serif;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  input{-webkit-user-select:text; user-select:text;}
   html,body{margin:0; height:100%; overflow:hidden; background:var(--carbon); font-family:var(--body);}
   #app{position:relative; width:100%; height:100vh; height:100dvh; max-width:480px; margin:0 auto; background:var(--bone); overflow:hidden;}
 
@@ -51,26 +52,54 @@
 
   #tapHint{position:absolute; bottom:6%; left:0; right:0; text-align:center; font-size:12px; color:var(--gray); font-family:var(--body);}
 
-  #stage.mode-tank .fire-el{display:none;}
-  #stage:not(.mode-tank) .tank-el{display:none;}
+  #screen-game.mode-tank #stage{background:#DCEBC8;}
+  #screen-game.mode-tank .fire-el{display:none;}
+  #screen-game:not(.mode-tank) .tank-el{display:none;}
+
   #enemyLayer{position:absolute; inset:0;}
-  .enemy{position:absolute; width:40px; height:26px;}
+  .enemy{position:absolute; width:40px; height:26px; filter:drop-shadow(0 3px 2px rgba(0,0,0,0.25));}
   .enemy svg{display:block;}
-  #tankPlayer{position:absolute; width:38px; height:38px; transition:left .08s linear, top .08s linear, transform .15s ease;}
+  #tankPlayer{position:absolute; width:38px; height:38px; transition:left .08s linear, top .08s linear, transform .15s ease; filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3));}
   #tankPlayer svg{display:block;}
-  @keyframes boom{0%{transform:scale(1); opacity:1}100%{transform:scale(1.8); opacity:0}}
-  @media (prefers-reduced-motion:no-preference){ .enemy.boom{animation:boom .3s ease forwards;} }
+  @media (prefers-reduced-motion:no-preference){
+    #tankPlayer.blink{animation:blink .25s steps(1) infinite;}
+  }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+  @keyframes boom{0%{transform:scale(1); opacity:1}100%{transform:scale(2); opacity:0}}
+  @media (prefers-reduced-motion:no-preference){ .enemy.boom{animation:boom .35s ease forwards;} }
+
   #wallLayer{position:absolute; inset:0;}
-  .wall{position:absolute; background:#9A9C9E; border:2px solid #141414; border-radius:3px;}
+  .wall{position:absolute;}
+  .tree .canopy{position:absolute; left:0; top:0; width:100%; height:72%; border-radius:50%; background:#3FA796; border:2px solid #1F5C50;}
+  .tree .canopy2{position:absolute; left:14%; top:-10%; width:60%; height:55%; border-radius:50%; background:#57C2AB;}
+  .tree .trunk{position:absolute; left:38%; bottom:0; width:24%; height:38%; background:#8A5A32; border:2px solid #5C3A1E; border-radius:0 0 3px 3px;}
+  .lake{position:absolute; border-radius:50% 50% 45% 45% / 60% 60% 40% 40%; background:#5EA8E0; border:3px solid #3B7FBF; box-shadow:inset 0 -6px 10px rgba(0,60,120,0.25);}
+  .lake::after{content:''; position:absolute; left:18%; top:22%; width:35%; height:18%; background:rgba(255,255,255,0.45); border-radius:50%;}
+
   #bulletLayer{position:absolute; inset:0;}
-  .bullet{position:absolute; width:8px; height:8px; border-radius:50%; background:#141414;}
-  .bullet.pierce{background:#EF9F27; box-shadow:0 0 6px #EF9F27;}
+  .bullet{position:absolute; width:9px; height:9px; border-radius:50%; background:#141414; box-shadow:0 0 3px rgba(0,0,0,0.5);}
+  .bullet.pierce{background:#EF9F27; box-shadow:0 0 8px #EF9F27;}
+  .ebullet{position:absolute; width:9px; height:9px; border-radius:50%; background:#993C1D; box-shadow:0 0 4px #D8432E;}
+  .hitflash{position:absolute; inset:0; background:#D8432E; opacity:0; pointer-events:none; z-index:9;}
+  .hitflash.show{opacity:0.35; transition:opacity .5s ease;}
+
+  #tankHud{display:flex; gap:5px;}
+  .life-dot{width:14px; height:10px; border-radius:2px; background:var(--red); border:1.5px solid var(--carbon);}
+  .life-dot.lost{background:transparent; border-color:#C9CACC;}
 
   #tankControls{display:none; position:absolute; bottom:10px; left:10px; right:10px; z-index:8; align-items:flex-end; justify-content:space-between;}
-  #stage.mode-tank ~ #tankControls{display:flex;}
-  #dpad{display:grid; grid-template-columns:repeat(3, 44px); grid-template-rows:repeat(3, 44px); grid-template-areas:". up ." "left . right" ". down .";}
-  .dbtn{width:100%; height:100%; padding:0; font-size:16px; border-radius:8px; background:rgba(255,255,255,0.85); color:var(--carbon); border:2px solid var(--carbon);}
-  #fireBtn{width:64px; height:64px; border-radius:50%; padding:0; font-size:11px; background:var(--red); border:2px solid var(--carbon);}
+  #screen-game.mode-tank #tankControls{display:flex;}
+  #dpad{display:grid; grid-template-columns:repeat(3, 46px); grid-template-rows:repeat(3, 46px); grid-template-areas:". up ." "left . right" ". down .";}
+  .dbtn{width:100%; height:100%; padding:0; border-radius:10px; background:linear-gradient(180deg, #ffffff, #d8d8d2); color:var(--carbon); border:2px solid var(--carbon); border-bottom-width:5px; box-shadow:0 3px 0 rgba(0,0,0,0.15); touch-action:none;}
+  .dbtn svg{pointer-events:none;}
+  .dbtn.pressed{border-bottom-width:2px; transform:translateY(3px); background:linear-gradient(180deg, #d8d8d2, #c2c2ba);}
+
+  #actionBtns{display:flex; flex-direction:column; align-items:center; gap:10px;}
+  #fireBtn{width:70px; height:70px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #E8664D, #A32A1C); border:3px solid var(--carbon); border-bottom-width:7px; box-shadow:0 4px 0 rgba(0,0,0,0.2); touch-action:none;}
+  #fireBtn.pressed{border-bottom-width:3px; transform:translateY(4px);}
+  #turboBtn{width:52px; height:52px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #FFD061, #C77E14); border:3px solid var(--carbon); border-bottom-width:6px; box-shadow:0 3px 0 rgba(0,0,0,0.2); touch-action:none;}
+  #turboBtn.pressed{border-bottom-width:2px; transform:translateY(3px);}
+  #turboBtn.disabled{opacity:0.4;}
 
   .overlay{position:absolute; inset:0; background:var(--bone); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10;}
   .overlay.show{display:flex;}
@@ -180,6 +209,9 @@
       <div id="dots">
         <div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div>
       </div>
+      <div id="tankHud" class="tank-el">
+        <div class="life-dot" id="life1"></div><div class="life-dot" id="life2"></div><div class="life-dot" id="life3"></div>
+      </div>
       <div id="score">0</div>
       <button onclick="openMap()" style="width:auto; padding:4px 10px; font-size:11px; border-width:1.5px;">Mapa</button>
     </div>
@@ -191,24 +223,41 @@
       <div id="wallLayer" class="tank-el"></div>
       <div id="enemyLayer" class="tank-el"></div>
       <div id="bulletLayer" class="tank-el"></div>
+      <div id="hitFlash" class="tank-el hitflash"></div>
       <div id="tankPlayer" class="tank-el">
         <svg width="46" height="46" viewBox="0 0 60 60">
-          <rect x="8" y="16" width="44" height="28" rx="4" fill="#3FA796" stroke="#141414" stroke-width="2"/>
+          <defs>
+            <linearGradient id="playerBodyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5FC2AC"/><stop offset="100%" stop-color="#2C8C78"/>
+            </linearGradient>
+          </defs>
+          <rect x="6" y="15" width="48" height="4" fill="#1F5C50"/>
+          <rect x="6" y="41" width="48" height="4" fill="#1F5C50"/>
+          <rect x="8" y="16" width="44" height="28" rx="4" fill="url(#playerBodyGrad)" stroke="#141414" stroke-width="2"/>
+          <rect x="12" y="20" width="36" height="3" fill="#8FE0CC" opacity="0.6"/>
           <circle cx="16" cy="44" r="6" fill="#141414"/><circle cx="30" cy="44" r="6" fill="#141414"/><circle cx="44" cy="44" r="6" fill="#141414"/>
-          <rect x="20" y="6" width="20" height="16" rx="3" fill="#3FA796" stroke="#141414" stroke-width="2"/>
-          <rect x="27" y="-6" width="6" height="16" fill="#141414"/>
+          <circle cx="16" cy="44" r="2" fill="#5F5E5A"/><circle cx="30" cy="44" r="2" fill="#5F5E5A"/><circle cx="44" cy="44" r="2" fill="#5F5E5A"/>
+          <rect x="20" y="6" width="20" height="16" rx="3" fill="url(#playerBodyGrad)" stroke="#141414" stroke-width="2"/>
+          <rect x="27" y="-6" width="6" height="16" fill="#1F5C50" stroke="#141414" stroke-width="1"/>
         </svg>
       </div>
     </div>
 
     <div id="tankControls" class="tank-el">
       <div id="dpad">
-        <button class="dbtn" id="dbtn-up" style="grid-area:up;">▲</button>
-        <button class="dbtn" id="dbtn-left" style="grid-area:left;">◀</button>
-        <button class="dbtn" id="dbtn-right" style="grid-area:right;">▶</button>
-        <button class="dbtn" id="dbtn-down" style="grid-area:down;">▼</button>
+        <button class="dbtn" id="dbtn-up" style="grid-area:up;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,3 17,15 3,15" fill="#141414"/></svg></button>
+        <button class="dbtn" id="dbtn-left" style="grid-area:left;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="3,10 15,3 15,17" fill="#141414"/></svg></button>
+        <button class="dbtn" id="dbtn-right" style="grid-area:right;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="17,10 5,3 5,17" fill="#141414"/></svg></button>
+        <button class="dbtn" id="dbtn-down" style="grid-area:down;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,17 3,5 17,5" fill="#141414"/></svg></button>
       </div>
-      <button id="fireBtn">FUEGO</button>
+      <div id="actionBtns">
+        <button id="turboBtn">
+          <svg width="24" height="24" viewBox="0 0 120 120"><path d="M 64,20 L 40,64 L 54,64 L 48,100 L 82,56 L 66,56 Z" fill="#141414"/></svg>
+        </button>
+        <button id="fireBtn">
+          <svg width="32" height="32" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" fill="none" stroke="#F5F5F0" stroke-width="3"/><circle cx="30" cy="30" r="4" fill="#F5F5F0"/><line x1="30" y1="2" x2="30" y2="14" stroke="#F5F5F0" stroke-width="3"/><line x1="30" y1="46" x2="30" y2="58" stroke="#F5F5F0" stroke-width="3"/><line x1="2" y1="30" x2="14" y2="30" stroke="#F5F5F0" stroke-width="3"/><line x1="46" y1="30" x2="58" y2="30" stroke="#F5F5F0" stroke-width="3"/></svg>
+        </button>
+      </div>
     </div>
 
     <div class="overlay" id="cp-overlay">
@@ -398,7 +447,7 @@ function startGame(mode){
   avatarSVGString = buildAvatarSVG(34,48);
   document.getElementById('screen-start').style.display='none';
   document.getElementById('screen-game').style.display='flex';
-  document.getElementById('stage').classList.toggle('mode-tank', mode==='tank');
+  document.getElementById('screen-game').classList.toggle('mode-tank', mode==='tank');
 
   if(mode==='fire'){
     document.getElementById('player').innerHTML = avatarSVGString;
@@ -638,17 +687,24 @@ let enemies=[];
 let bullets=[];
 let WALLS=[];
 let tankNerdActive=false;
+let enemyGradId=0;
 let tankX=0, tankY=0, tankDir='up';
 let moveFlags={up:false,down:false,left:false,right:false};
 let lastFire=0;
+let lives=3, maxLives=3, invulnerable=false;
+let enemyBullets=[];
+let turboReady=true, turboActive=false;
 const DIRDEG={up:0,right:90,down:180,left:270};
 const DIRDELTA={up:{dx:0,dy:-1},down:{dx:0,dy:1},left:{dx:-1,dy:0},right:{dx:1,dy:0}};
 
 function initTankArena(){
-  enemies=[]; bullets=[];
+  enemies=[]; bullets=[]; enemyBullets=[];
+  lives=maxLives; invulnerable=false; turboActive=false; turboReady=true;
+  updateLivesUI();
   document.getElementById('enemyLayer').innerHTML='';
   document.getElementById('bulletLayer').innerHTML='';
   document.getElementById('wallLayer').innerHTML='';
+  document.getElementById('tankPlayer').classList.remove('blink');
 
   const w=stage.clientWidth, h=stage.clientHeight;
   tankX=w/2-19; tankY=h-70; tankDir='up'; moveFlags={up:false,down:false,left:false,right:false};
@@ -657,14 +713,21 @@ function initTankArena(){
   tp.style.transform='rotate(0deg)';
 
   WALLS=[
-    {x:w*0.15, y:h*0.30, w:70, h:18},
-    {x:w*0.62, y:h*0.48, w:18, h:90},
-    {x:w*0.25, y:h*0.65, w:80, h:16}
+    {x:w*0.15, y:h*0.28, w:34, h:34, type:'tree'},
+    {x:w*0.68, y:h*0.22, w:34, h:34, type:'tree'},
+    {x:w*0.72, y:h*0.50, w:100, h:70, type:'lake'},
+    {x:w*0.20, y:h*0.62, w:34, h:34, type:'tree'},
+    {x:w*0.45, y:h*0.40, w:34, h:34, type:'tree'}
   ];
   WALLS.forEach(wl=>{
     const el=document.createElement('div');
-    el.className='wall';
     el.style.left=wl.x+'px'; el.style.top=wl.y+'px'; el.style.width=wl.w+'px'; el.style.height=wl.h+'px';
+    if(wl.type==='lake'){
+      el.className='wall lake';
+    } else {
+      el.className='wall tree';
+      el.innerHTML='<div class="canopy"></div><div class="canopy2"></div><div class="trunk"></div>';
+    }
     document.getElementById('wallLayer').appendChild(el);
   });
 
@@ -679,7 +742,8 @@ function spawnEnemyPatrol(){
   const stageW=stage.clientWidth;
   const el=document.createElement('div');
   el.className='enemy';
-  el.innerHTML='<svg width="40" height="26" viewBox="0 0 60 40"><rect x="6" y="14" width="48" height="18" rx="3" fill="#993C1D" stroke="#141414" stroke-width="2"/><circle cx="16" cy="32" r="4" fill="#141414"/><circle cx="30" cy="32" r="4" fill="#141414"/><circle cx="44" cy="32" r="4" fill="#141414"/><rect x="24" y="4" width="12" height="12" rx="2" fill="#993C1D" stroke="#141414" stroke-width="2"/></svg>';
+  el.innerHTML='<svg width="40" height="26" viewBox="0 0 60 40"><defs><linearGradient id="enemyGrad'+enemyGradId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C25A3E"/><stop offset="100%" stop-color="#7A2E1A"/></linearGradient></defs><rect x="4" y="13" width="52" height="3" fill="#4A1B0F"/><rect x="4" y="35" width="52" height="3" fill="#4A1B0F"/><rect x="6" y="14" width="48" height="18" rx="3" fill="url(#enemyGrad'+enemyGradId+')" stroke="#141414" stroke-width="2"/><rect x="10" y="17" width="34" height="2.5" fill="#E08A6E" opacity="0.6"/><circle cx="16" cy="32" r="4" fill="#141414"/><circle cx="30" cy="32" r="4" fill="#141414"/><circle cx="44" cy="32" r="4" fill="#141414"/><rect x="24" y="4" width="12" height="12" rx="2" fill="url(#enemyGrad'+enemyGradId+')" stroke="#141414" stroke-width="2"/></svg>';
+  enemyGradId++;
   const y=40+Math.random()*100;
   const x=20+Math.random()*(stageW-60);
   el.style.left=x+'px'; el.style.top=y+'px';
@@ -722,21 +786,89 @@ function fireBullet(){
   bullets.push({el, x:startX, y:startY, dx:d.dx, dy:d.dy, pierce:tankNerdActive});
 }
 
+function updateLivesUI(){
+  for(let i=1;i<=maxLives;i++){
+    document.getElementById('life'+i).classList.toggle('lost', i>lives);
+  }
+}
+
+function playerHit(){
+  if(invulnerable) return;
+  lives--;
+  updateLivesUI();
+  hitSound();
+  const flash=document.getElementById('hitFlash');
+  flash.classList.add('show');
+  setTimeout(()=>flash.classList.remove('show'),300);
+  invulnerable=true;
+  document.getElementById('tankPlayer').classList.add('blink');
+  setTimeout(()=>{
+    invulnerable=false;
+    document.getElementById('tankPlayer').classList.remove('blink');
+  },1400);
+  if(lives<=0){
+    lives=maxLives;
+    updateLivesUI();
+    tankX=stage.clientWidth/2-19; tankY=stage.clientHeight-70;
+    const tp=document.getElementById('tankPlayer');
+    tp.style.left=tankX+'px'; tp.style.top=tankY+'px';
+    enemyBullets.forEach(b=>b.el.remove()); enemyBullets=[];
+  }
+}
+
+function hitSound(){
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(300, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime+0.3);
+  g.gain.setValueAtTime(0.25, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.35);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+0.35);
+}
+
+function fireEnemyBullet(en){
+  const cx=en.x+20, cy=en.y+13, tx=tankX+19, ty=tankY+19;
+  const dx=tx-cx, dy=ty-cy, dist=Math.sqrt(dx*dx+dy*dy)||1;
+  const el=document.createElement('div');
+  el.className='ebullet';
+  el.style.left=cx+'px'; el.style.top=cy+'px';
+  document.getElementById('bulletLayer').appendChild(el);
+  enemyBullets.push({el, x:cx, y:cy, dx:dx/dist, dy:dy/dist});
+}
+
+document.getElementById('turboBtn').addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  if(!turboReady || turboActive) return;
+  turboActive=true; turboReady=false;
+  document.getElementById('turboBtn').classList.add('disabled');
+  setTimeout(()=>{ turboActive=false; },1000);
+  setTimeout(()=>{ turboReady=true; document.getElementById('turboBtn').classList.remove('disabled'); },4000);
+});
+
 ['up','down','left','right'].forEach(dir=>{
   const btn=document.getElementById('dbtn-'+dir);
   btn.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
     moveFlags[dir]=true; tankDir=dir;
+    btn.classList.add('pressed');
     document.getElementById('tankPlayer').style.transform='rotate('+DIRDEG[dir]+'deg)';
   });
-  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev, ()=>{ moveFlags[dir]=false; }));
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev, ()=>{ moveFlags[dir]=false; btn.classList.remove('pressed'); }));
 });
-document.getElementById('fireBtn').addEventListener('pointerdown', (e)=>{ e.preventDefault(); fireBullet(); });
+document.getElementById('fireBtn').addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  fireBullet();
+  const b=document.getElementById('fireBtn');
+  b.classList.add('pressed');
+  setTimeout(()=>b.classList.remove('pressed'),100);
+});
 
 function tankLoop(){
   if(!running) return;
 
   const stageW=stage.clientWidth, stageH=stage.clientHeight;
+  const now=performance.now();
 
   let dx=0, dy=0;
   if(moveFlags.up) dy-=1;
@@ -744,7 +876,7 @@ function tankLoop(){
   if(moveFlags.left) dx-=1;
   if(moveFlags.right) dx+=1;
   if(dx!==0 || dy!==0){
-    const speed=3;
+    const speed = turboActive ? 6.5 : 3;
     let nx=Math.max(0, Math.min(stageW-38, tankX+dx*speed));
     let ny=Math.max(0, Math.min(stageH-38, tankY+dy*speed));
     if(!collidesWithWalls(nx,ny,38,38)){
@@ -776,11 +908,34 @@ function tankLoop(){
     }
   }
 
+  for(let i=enemyBullets.length-1;i>=0;i--){
+    const b=enemyBullets[i];
+    b.x+=b.dx*4.2; b.y+=b.dy*4.2;
+    b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
+    if(b.x<-10 || b.x>stageW+10 || b.y<-10 || b.y>stageH+10){
+      b.el.remove(); enemyBullets.splice(i,1); continue;
+    }
+    if(b.x>tankX && b.x<tankX+38 && b.y>tankY && b.y<tankY+38){
+      b.el.remove(); enemyBullets.splice(i,1);
+      playerHit();
+    }
+  }
+
+  const desiredRange=90;
   enemies.forEach(en=>{
     if(en.hit) return;
-    en.x += en.dir*en.speed;
-    if(en.x<10 || en.x>stageW-50) en.dir*=-1;
-    en.el.style.left=en.x+'px';
+    const ddx=tankX-en.x, ddy=tankY-en.y;
+    const dist=Math.sqrt(ddx*ddx+ddy*ddy)||1;
+    if(dist>desiredRange){
+      en.x += (ddx/dist)*en.speed;
+      en.y += (ddy/dist)*en.speed;
+      en.el.style.left=en.x+'px'; en.el.style.top=en.y+'px';
+    }
+    if(!en.nextShot) en.nextShot = now + 1200 + Math.random()*1200;
+    if(now > en.nextShot){
+      fireEnemyBullet(en);
+      en.nextShot = now + 1800 + Math.random()*1400;
+    }
   });
 
   if(!awaitingAnswer) requestAnimationFrame(tankLoop);
