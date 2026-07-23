@@ -59,7 +59,9 @@
   #enemyLayer{position:absolute; inset:0;}
   .enemy{position:absolute; width:40px; height:26px; filter:drop-shadow(0 3px 2px rgba(0,0,0,0.25));}
   .enemy svg{display:block;}
-  #tankPlayer{position:absolute; width:38px; height:38px; transition:left .08s linear, top .08s linear, transform .15s ease; filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3));}
+  #tankPlayer{position:absolute; width:38px; height:38px; transition:transform .15s ease; filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3));}
+  @keyframes dashglow{0%,100%{filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3)) drop-shadow(0 0 10px #EF9F27)}50%{filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3)) drop-shadow(0 0 4px #EF9F27)}}
+  @media (prefers-reduced-motion:no-preference){ #tankPlayer.dashing{animation:dashglow .3s ease-in-out 3;} }
   #tankPlayer svg{display:block;}
   @media (prefers-reduced-motion:no-preference){
     #tankPlayer.blink{animation:blink .25s steps(1) infinite;}
@@ -100,6 +102,12 @@
   #turboBtn{width:52px; height:52px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #FFD061, #C77E14); border:3px solid var(--carbon); border-bottom-width:6px; box-shadow:0 3px 0 rgba(0,0,0,0.2); touch-action:none;}
   #turboBtn.pressed{border-bottom-width:2px; transform:translateY(3px);}
   #turboBtn.disabled{opacity:0.4;}
+  #mineBtn{width:52px; height:52px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #ffffff, #C9CACC); border:3px solid var(--carbon); border-bottom-width:6px; box-shadow:0 3px 0 rgba(0,0,0,0.2); touch-action:none;}
+  #mineBtn.pressed{border-bottom-width:2px; transform:translateY(3px);}
+  #mineBtn.disabled{opacity:0.4;}
+  .mine{position:absolute; width:22px; height:22px; border-radius:50%; background:#2C2C2A; border:2px solid #EF9F27;}
+  @media (prefers-reduced-motion:no-preference){ .mine{animation:minepulse 0.8s ease-in-out infinite;} }
+  @keyframes minepulse{0%,100%{opacity:1}50%{opacity:0.4}}
 
   .overlay{position:absolute; inset:0; background:var(--bone); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10;}
   .overlay.show{display:flex;}
@@ -110,6 +118,7 @@
   .opt{flex:1; background:#fff; border:2px solid var(--carbon); border-radius:12px; padding:18px 6px; text-align:center; font-family:var(--display); font-weight:700; font-size:16px; color:var(--carbon);}
   @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
   @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  @media (prefers-reduced-motion:no-preference){ .shakeinput{animation:shake .35s ease;} }
   @media (prefers-reduced-motion:no-preference){
     .opt.ok{animation:pop .4s ease;}
     .opt.bad{animation:shake .35s ease;}
@@ -254,6 +263,9 @@
         <button id="turboBtn">
           <svg width="24" height="24" viewBox="0 0 120 120"><path d="M 64,20 L 40,64 L 54,64 L 48,100 L 82,56 L 66,56 Z" fill="#141414"/></svg>
         </button>
+        <button id="mineBtn">
+          <svg width="22" height="22" viewBox="0 0 60 60"><circle cx="30" cy="30" r="13" fill="#141414"/><line x1="30" y1="6" x2="30" y2="15" stroke="#141414" stroke-width="4"/><line x1="30" y1="45" x2="30" y2="54" stroke="#141414" stroke-width="4"/><line x1="6" y1="30" x2="15" y2="30" stroke="#141414" stroke-width="4"/><line x1="45" y1="30" x2="54" y2="30" stroke="#141414" stroke-width="4"/><circle cx="30" cy="30" r="4" fill="#EF9F27"/></svg>
+        </button>
         <button id="fireBtn">
           <svg width="32" height="32" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" fill="none" stroke="#F5F5F0" stroke-width="3"/><circle cx="30" cy="30" r="4" fill="#F5F5F0"/><line x1="30" y1="2" x2="30" y2="14" stroke="#F5F5F0" stroke-width="3"/><line x1="30" y1="46" x2="30" y2="58" stroke="#F5F5F0" stroke-width="3"/><line x1="2" y1="30" x2="14" y2="30" stroke="#F5F5F0" stroke-width="3"/><line x1="46" y1="30" x2="58" y2="30" stroke="#F5F5F0" stroke-width="3"/></svg>
         </button>
@@ -316,9 +328,17 @@
 </div>
 
 <script>
-// ---------- audio ----------
+// ---------- audio compartido (crítico para que suene en iOS Safari) ----------
+let audioCtx=null;
+function getAudioCtx(){
+  if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+  if(audioCtx.state==='suspended'){ audioCtx.resume(); }
+  return audioCtx;
+}
+document.addEventListener('pointerdown', ()=>{ getAudioCtx(); }, {capture:true});
+
 function tone(freqs){
-  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  const ctx = getAudioCtx();
   let t = ctx.currentTime;
   freqs.forEach((f)=>{
     const o=ctx.createOscillator(), g=ctx.createGain();
@@ -434,6 +454,14 @@ function goStep2(){
   document.getElementById('onb-step2').style.display='block';
 }
 function goStep3(){
+  const inp=document.getElementById('nameInput');
+  if(!inp.value.trim()){
+    inp.style.borderColor='#D8432E';
+    inp.placeholder='¡Escribe un nombre primero!';
+    inp.classList.remove('shakeinput'); void inp.offsetWidth; inp.classList.add('shakeinput');
+    inp.focus();
+    return;
+  }
   document.getElementById('onb-step2').style.display='none';
   document.getElementById('onb-step3').style.display='block';
 }
@@ -698,7 +726,7 @@ const DIRDEG={up:0,right:90,down:180,left:270};
 const DIRDELTA={up:{dx:0,dy:-1},down:{dx:0,dy:1},left:{dx:-1,dy:0},right:{dx:1,dy:0}};
 
 function initTankArena(){
-  enemies=[]; bullets=[]; enemyBullets=[];
+  enemies=[]; bullets=[]; enemyBullets=[]; mines=[];
   lives=maxLives; invulnerable=false; turboActive=false; turboReady=true;
   updateLivesUI();
   document.getElementById('enemyLayer').innerHTML='';
@@ -817,7 +845,7 @@ function playerHit(){
 }
 
 function hitSound(){
-  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const ctx=getAudioCtx();
   const o=ctx.createOscillator(), g=ctx.createGain();
   o.type='sawtooth'; o.frequency.setValueAtTime(300, ctx.currentTime);
   o.frequency.exponentialRampToValueAtTime(80, ctx.currentTime+0.3);
@@ -837,13 +865,62 @@ function fireEnemyBullet(en){
   enemyBullets.push({el, x:cx, y:cy, dx:dx/dist, dy:dy/dist});
 }
 
+function whooshSound(){
+  const ctx=getAudioCtx();
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(200, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(700, ctx.currentTime+0.22);
+  g.gain.setValueAtTime(0.22, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.26);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+0.28);
+}
+
 document.getElementById('turboBtn').addEventListener('pointerdown', (e)=>{
   e.preventDefault();
   if(!turboReady || turboActive) return;
   turboActive=true; turboReady=false;
+  whooshSound();
+
+  const d=DIRDELTA[tankDir];
+  const nx=Math.max(0, Math.min(stage.clientWidth-38, tankX+d.dx*55));
+  const ny=Math.max(0, Math.min(stage.clientHeight-38, tankY+d.dy*55));
+  if(!collidesWithWalls(nx,ny,38,38)){
+    tankX=nx; tankY=ny;
+    const tp=document.getElementById('tankPlayer');
+    tp.style.left=tankX+'px'; tp.style.top=tankY+'px';
+  }
+  document.getElementById('tankPlayer').classList.add('dashing');
   document.getElementById('turboBtn').classList.add('disabled');
-  setTimeout(()=>{ turboActive=false; },1000);
+  setTimeout(()=>{
+    turboActive=false;
+    document.getElementById('tankPlayer').classList.remove('dashing');
+  },1000);
   setTimeout(()=>{ turboReady=true; document.getElementById('turboBtn').classList.remove('disabled'); },4000);
+});
+
+let mines=[];
+let mineReady=true;
+function placeMine(){
+  if(!mineReady) return;
+  if(mines.filter(m=>!m.done).length>=2) return;
+  mineReady=false;
+  document.getElementById('mineBtn').classList.add('disabled');
+  setTimeout(()=>{ mineReady=true; document.getElementById('mineBtn').classList.remove('disabled'); },1500);
+
+  const el=document.createElement('div');
+  el.className='mine';
+  const mx=tankX+8, my=tankY+8;
+  el.style.left=mx+'px'; el.style.top=my+'px';
+  document.getElementById('bulletLayer').appendChild(el);
+  mines.push({el, x:mx, y:my, detonateAt: performance.now()+7000, done:false});
+}
+document.getElementById('mineBtn').addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  placeMine();
+  const b=document.getElementById('mineBtn');
+  b.classList.add('pressed');
+  setTimeout(()=>b.classList.remove('pressed'),100);
 });
 
 ['up','down','left','right'].forEach(dir=>{
@@ -938,11 +1015,27 @@ function tankLoop(){
     }
   });
 
+  for(let i=mines.length-1;i>=0;i--){
+    const m=mines[i];
+    if(m.done) continue;
+    if(now>=m.detonateAt){
+      m.done=true;
+      explosionSound();
+      m.el.remove();
+      enemies.forEach(en=>{
+        if(en.hit) return;
+        const ddx=(en.x+20)-m.x, ddy=(en.y+13)-m.y;
+        if(Math.sqrt(ddx*ddx+ddy*ddy) < 70){ destroyEnemy(en); }
+      });
+      mines.splice(i,1);
+    }
+  }
+
   if(!awaitingAnswer) requestAnimationFrame(tankLoop);
 }
 
 function fireSound(){
-  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const ctx=getAudioCtx();
   const o=ctx.createOscillator(), g=ctx.createGain();
   o.type='triangle'; o.frequency.setValueAtTime(600, ctx.currentTime);
   o.frequency.exponentialRampToValueAtTime(200, ctx.currentTime+0.12);
@@ -952,7 +1045,7 @@ function fireSound(){
   o.start(); o.stop(ctx.currentTime+0.15);
 }
 function explosionSound(){
-  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const ctx=getAudioCtx();
   const o=ctx.createOscillator(), g=ctx.createGain();
   o.type='square'; o.frequency.setValueAtTime(180, ctx.currentTime);
   o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime+0.25);
