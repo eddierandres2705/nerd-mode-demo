@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Nerd Mode: Activado — Demo</title>
+<style>
+  :root{
+    --silver:#C9CACC; --carbon:#141414; --red:#D8432E; --amber:#EF9F27; --bone:#F5F5F0; --gray:#5F5E5A;
+    --display:'Space Grotesk','Poppins',system-ui,sans-serif;
+    --body:'Inter',-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%; overflow:hidden; background:var(--carbon); font-family:var(--body);}
+  #app{position:relative; width:100%; height:100vh; height:100dvh; max-width:480px; margin:0 auto; background:var(--bone); overflow:hidden;}
+
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+
+  #screen-start{background:var(--bone); text-align:center;}
+  #screen-start .brand{display:flex; align-items:center; gap:8px; position:absolute; top:24px;}
+  #screen-start .brandname{font-family:var(--display); font-weight:700; font-size:14px; color:var(--carbon);}
+  #screen-start h1{font-family:var(--display); font-weight:700; font-size:20px; color:var(--carbon); max-width:260px; margin:18px 0 6px;}
+  #screen-start p{color:var(--gray); font-size:13px; margin:0 0 26px;}
+  button{font-family:var(--display); font-weight:700; font-size:16px; border-radius:10px; padding:16px; border:2px solid var(--red); background:var(--carbon); color:#EDEDED; width:100%; max-width:260px;}
+  .ghost{background:transparent; color:var(--gray); border:none; font-size:12px; text-decoration:underline; margin-top:14px; font-weight:400; font-family:var(--body);}
+  .age-btn{flex:1; width:auto; padding:12px 4px; border-radius:10px; border:2px solid var(--carbon); font-family:var(--display); font-weight:700;}
+  .age-btn.picked{background:var(--carbon); color:#EDEDED;}
+  .tabbar{display:flex; border-bottom:2px solid #E5E4DC; width:100%; max-width:260px; margin-bottom:14px;}
+  .tab{flex:1; text-align:center; padding:8px 0; font-family:var(--body); font-size:12px; color:#9A9A96; border-bottom:3px solid transparent; cursor:pointer;}
+  .tab.active{color:var(--carbon); font-family:var(--display); font-weight:700; border-bottom-color:var(--red);}
+  .swrow{display:flex; gap:10px; width:100%; max-width:260px; justify-content:center;}
+  .sw{width:52px; height:52px; border-radius:10px; background:#fff; border:2px solid #C9CACC; padding:0; display:flex; align-items:center; justify-content:center; color:var(--carbon);}
+  .sw.circ{border-radius:50%;}
+  .sw.picked{border-color:var(--carbon); border-width:3px;}
+  #exitBtn{position:absolute; top:54px; right:16px; z-index:6; width:auto; padding:5px 10px; font-size:10px; border-width:1.5px;}
+
+  #screen-game{display:none; padding:0;}
+  #hud{position:absolute; top:16px; left:16px; right:16px; display:flex; justify-content:space-between; align-items:center; z-index:5;}
+  #dots{display:flex; gap:6px;}
+  .dot{width:13px; height:13px; border-radius:50%; background:#fff; border:2px solid var(--silver);}
+  .dot.on{background:var(--red); border-color:var(--red);}
+  #score{font-family:var(--display); font-weight:700; font-size:13px; color:var(--carbon); background:rgba(255,255,255,0.7); padding:4px 10px; border-radius:8px;}
+
+  #stage{position:relative; width:100%; height:100%; background:var(--bone); overflow:hidden;}
+  #ground{position:absolute; left:0; right:0; bottom:18%; height:2px; background:var(--silver);}
+  #player{position:absolute; left:14%; bottom:18%; width:34px; height:48px; transform:translateY(0);}
+  #player svg{display:block;}
+  @keyframes stumble{0%,100%{transform:translateX(0)}30%{transform:translateX(-8px)}60%{transform:translateX(4px)}}
+  @media (prefers-reduced-motion:no-preference){ #player svg.hit{animation:stumble .35s ease;} }
+  .obstacle{position:absolute; bottom:18%; width:28px; height:40px; background:var(--red); border-radius:4px 4px 0 0;}
+
+  #tapHint{position:absolute; bottom:6%; left:0; right:0; text-align:center; font-size:12px; color:var(--gray); font-family:var(--body);}
+
+  .overlay{position:absolute; inset:0; background:var(--bone); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10;}
+  .overlay.show{display:flex;}
+  #cp-prompt{font-family:var(--display); font-weight:700; font-size:22px; color:var(--carbon); margin-bottom:6px;}
+  #cp-prompt .speaker{cursor:pointer; display:inline-flex; padding:10px;}
+  #cp-sub{font-family:var(--body); font-size:12px; color:var(--gray); margin-bottom:22px;}
+  #cp-options{display:flex; gap:14px; width:100%; max-width:280px;}
+  .opt{flex:1; background:#fff; border:2px solid var(--carbon); border-radius:12px; padding:18px 6px; text-align:center; font-family:var(--display); font-weight:700; font-size:16px; color:var(--carbon);}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  @media (prefers-reduced-motion:no-preference){
+    .opt.ok{animation:pop .4s ease;}
+    .opt.bad{animation:shake .35s ease;}
+    .dot.fresh{animation:pop .35s ease;}
+  }
+
+  #nm-overlay{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; z-index:20; transition:background-color .4s;}
+  #nm-overlay.show{display:flex;}
+  #nm-stage{position:relative; width:180px; height:180px;}
+  .ring{position:absolute; top:50%; left:50%; width:130px; height:130px; border-radius:50%; border:3px solid var(--amber); opacity:0;}
+  @keyframes ringpulse{0%{transform:translate(-50%,-50%) scale(0.35); opacity:0.55}100%{transform:translate(-50%,-50%) scale(2.1); opacity:0}}
+  @media (prefers-reduced-motion:no-preference){ .ring.active{animation:ringpulse 1.1s ease-out infinite;} }
+  #nm-diamond{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);}
+  #nm-text{font-family:var(--display); font-weight:700; font-size:24px; color:var(--carbon); opacity:0; margin-top:14px;}
+  #nm-seconds{font-family:var(--body); font-size:13px; color:var(--gray); margin-top:4px; min-height:18px;}
+
+  #screen-end{background:var(--bone); text-align:center; display:none;}
+
+  #screen-map{position:absolute; inset:0; background:var(--bone); display:none; flex-direction:column; align-items:center; padding:20px; z-index:15; overflow-y:auto;}
+  #screen-map.show{display:flex;}
+  @keyframes mapring{0%{transform:scale(0.9);opacity:0.7}100%{transform:scale(1.8);opacity:0}}
+  @keyframes mapfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes mapspark{0%,100%{opacity:0.15;transform:scale(0.7)}50%{opacity:1;transform:scale(1.25)}}
+  @keyframes mapflow{to{stroke-dashoffset:-24;}}
+  @media (prefers-reduced-motion:no-preference){
+    .map-ring{animation:mapring 1.6s ease-out infinite;}
+    .map-cur{animation:mapfloat 2.4s ease-in-out infinite;}
+    .map-spark{animation:mapspark 1.4s ease-in-out infinite;}
+    .map-flow{animation:mapflow 1.2s linear infinite;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="screen" id="screen-start">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 120 120"><rect x="18" y="18" width="84" height="84" rx="10" fill="#C9CACC" stroke="#141414" stroke-width="8" transform="rotate(45 60 60)"/><polygon points="60,60 119.4,60 60,119.4" fill="#D8432E"/><path d="M 64,34 L 46,64 L 58,64 L 54,86 L 76,54 L 64,54 Z" fill="#141414"/></svg>
+      <span class="brandname">Nerd Mode</span>
+    </div>
+
+    <div id="onb-step1">
+      <div id="avatarPreview" style="margin-bottom:10px;"></div>
+      <h1 style="font-size:16px; margin:0 0 14px;">Crea tu personaje</h1>
+
+      <div class="tabbar">
+        <div class="tab active" id="tab-hair" onclick="showTab('hair')">Cabello</div>
+        <div class="tab" id="tab-shirt" onclick="showTab('shirt')">Camiseta</div>
+        <div class="tab" id="tab-acc" onclick="showTab('acc')">Accesorio</div>
+      </div>
+
+      <div class="swrow" id="row-hair">
+        <button class="sw picked" onclick="pickHair(0,this)"><svg viewBox="0 20 100 30" width="34" height="16"><rect x="30" y="24" width="40" height="14" fill="#3B2A1E"/></svg></button>
+        <button class="sw" onclick="pickHair(1,this)"><svg viewBox="20 -2 60 32" width="34" height="16"><rect x="30" y="14" width="40" height="8" fill="#3B2A1E"/><polygon points="32,14 38,2 44,14" fill="#3B2A1E"/><polygon points="46,14 52,2 58,14" fill="#3B2A1E"/><polygon points="60,14 66,2 72,14" fill="#3B2A1E"/></svg></button>
+        <button class="sw" onclick="pickHair(2,this)"><svg viewBox="20 0 70 40" width="34" height="16"><rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/></svg></button>
+      </div>
+
+      <div class="swrow" id="row-shirt" style="display:none;">
+        <button class="sw circ picked" style="background:#D8432E;" onclick="pickShirt('#D8432E',this)"></button>
+        <button class="sw circ" style="background:#3FA796;" onclick="pickShirt('#3FA796',this)"></button>
+        <button class="sw circ" style="background:#7C6AE8;" onclick="pickShirt('#7C6AE8',this)"></button>
+        <button class="sw circ" style="background:#EF9F27;" onclick="pickShirt('#EF9F27',this)"></button>
+      </div>
+
+      <div class="swrow" id="row-acc" style="display:none;">
+        <button class="sw picked" onclick="pickAcc(0,this)"><span style="font-family:var(--body); font-size:11px;">Ninguno</span></button>
+        <button class="sw" onclick="pickAcc(1,this)"><svg viewBox="30 28 50 20" width="34" height="16"><rect x="38" y="36" width="8" height="4" fill="#141414"/><rect x="56" y="36" width="8" height="4" fill="#141414"/><rect x="46" y="37" width="10" height="2" fill="#141414"/></svg></button>
+        <button class="sw" onclick="pickAcc(2,this)"><svg viewBox="20 5 60 30" width="34" height="16"><rect x="28" y="10" width="44" height="10" fill="#993C1D"/><rect x="28" y="18" width="44" height="8" fill="#141414"/></svg></button>
+      </div>
+
+      <button onclick="goStep2()" style="margin-top:18px;">Siguiente</button>
+    </div>
+
+    <div id="onb-step2" style="display:none;">
+      <h1 style="margin-bottom:14px;">¿Cómo te llamas en el juego?</h1>
+      <input type="text" id="nameInput" placeholder="tu nombre de jugador" style="width:100%; max-width:260px; padding:14px; border-radius:10px; border:2px solid var(--carbon); text-align:center; font-family:var(--display); font-weight:700; font-size:15px; margin-bottom:6px;">
+      <p style="margin-bottom:20px;">puede ser inventado</p>
+      <p style="margin-bottom:8px; font-size:12px;">¿cuántos años tienes?</p>
+      <div id="ages" style="display:flex; gap:10px; width:100%; max-width:260px; margin-bottom:22px;">
+        <button class="age-btn picked" style="padding:12px 4px; font-size:13px;" onclick="selectAge('6-8',this)">6-8</button>
+        <button class="age-btn" style="padding:12px 4px; font-size:13px; background:#fff; color:var(--carbon);" onclick="selectAge('9-11',this)">9-11</button>
+        <button class="age-btn" style="padding:12px 4px; font-size:13px; background:#fff; color:var(--carbon);" onclick="selectAge('12-13',this)">12-13</button>
+      </div>
+      <button onclick="startGame()">¡A jugar!</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-game">
+    <button id="exitBtn" onclick="endDemo()">Terminar</button>
+    <div id="hud">
+      <div id="dots">
+        <div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div>
+      </div>
+      <div id="score">0</div>
+      <button onclick="openMap()" style="width:auto; padding:4px 10px; font-size:11px; border-width:1.5px;">Mapa</button>
+    </div>
+    <div id="stage">
+      <div id="ground"></div>
+      <div id="player"></div>
+      <div id="tapHint">toca para saltar</div>
+    </div>
+
+    <div class="overlay" id="cp-overlay">
+      <div id="cp-prompt">FELIZ</div>
+      <div id="cp-sub">elige la palabra en inglés</div>
+      <div id="cp-options">
+        <div class="opt" id="opt1" onclick="answer(this)"></div>
+        <div class="opt" id="opt2" onclick="answer(this)"></div>
+      </div>
+    </div>
+
+    <div class="overlay" id="nm-overlay">
+      <div id="nm-stage">
+        <div class="ring" id="ring1"></div>
+        <div class="ring" id="ring2" style="animation-delay:0.35s;"></div>
+        <div class="ring" id="ring3" style="animation-delay:0.7s;"></div>
+        <div id="nm-diamond">
+          <svg width="70" height="70" viewBox="0 0 120 120"><rect id="nmBody" x="18" y="18" width="84" height="84" rx="10" fill="#C9CACC" stroke="#141414" stroke-width="8" transform="rotate(45 60 60)"/><path d="M 64,34 L 46,64 L 58,64 L 54,86 L 76,54 L 64,54 Z" fill="#141414"/></svg>
+        </div>
+      </div>
+      <div id="nm-text">NERD MODE</div>
+      <div id="nm-seconds"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-end">
+    <svg width="70" height="70" viewBox="0 0 120 120"><rect x="18" y="18" width="84" height="84" rx="10" fill="#C9CACC" stroke="#141414" stroke-width="8" transform="rotate(45 60 60)"/><polygon points="60,60 119.4,60 60,119.4" fill="#D8432E"/><path d="M 64,34 L 46,64 L 58,64 L 54,86 L 76,54 L 64,54 Z" fill="#141414"/></svg>
+    <h1 style="font-family:var(--display); font-weight:700; font-size:20px; color:var(--carbon); margin-top:16px;">¡Eso fue Nerd Mode!</h1>
+    <p style="color:var(--gray); font-size:13px;">cuéntale a papá qué te pareció</p>
+    <button onclick="location.reload()" style="margin-top:20px;">Jugar otra vez</button>
+  </div>
+
+  <div id="screen-map">
+    <div style="font-family:var(--display); font-weight:700; font-size:15px; color:var(--carbon); text-align:center; margin-bottom:10px;">Tu progreso</div>
+    <div style="position:relative; width:280px; height:640px;">
+      <svg width="280" height="640" viewBox="0 0 280 640" style="position:absolute;top:0;left:0;">
+        <path d="M80,600 Q140,560 200,520 Q140,480 80,440 Q140,400 200,360" fill="none" stroke="#D8432E" stroke-width="5" stroke-linecap="round"/>
+        <path class="map-flow" d="M200,360 Q140,320 80,280 Q140,240 200,200 Q140,160 80,120" fill="none" stroke="#C9CACC" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 10"/>
+      </svg>
+      <div style="position:absolute; left:55px; top:575px; width:50px; height:50px; border-radius:50%; background:#141414; box-shadow:0 4px 10px rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-family:var(--display); font-weight:700;">✓</div>
+      <div style="position:absolute; left:175px; top:495px; width:50px; height:50px; border-radius:50%; background:#141414; box-shadow:0 4px 10px rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-family:var(--display); font-weight:700;">✓</div>
+      <div style="position:absolute; left:168px; top:333px; width:64px; height:64px;">
+        <div class="map-ring" style="position:absolute; inset:-10px; border-radius:50%; border:3px solid #EF9F27;"></div>
+        <div class="map-spark" style="position:absolute; top:-16px; left:-14px; width:6px; height:6px; border-radius:50%; background:#EF9F27;"></div>
+        <div class="map-spark" style="position:absolute; bottom:-14px; right:-16px; width:5px; height:5px; border-radius:50%; background:#EF9F27; animation-delay:0.5s;"></div>
+        <div class="map-cur" id="mapAvatar" style="width:64px; height:64px; border-radius:50%; background:#D8432E; box-shadow:0 6px 14px rgba(216,67,46,0.35); display:flex; align-items:center; justify-content:center;"></div>
+      </div>
+      <div style="position:absolute; left:58px; top:255px; width:50px; height:50px; border-radius:50%; background:#fff; border:2px solid #C9CACC;"></div>
+      <div style="position:absolute; left:178px; top:175px; width:50px; height:50px; border-radius:50%; background:#fff; border:2px solid #C9CACC;"></div>
+      <div style="position:absolute; left:55px; top:90px; width:60px; height:60px; border-radius:50%; background:#fff; border:3px solid #EF9F27; display:flex; align-items:center; justify-content:center; color:#EF9F27; font-size:22px;">★</div>
+    </div>
+    <p style="font-family:var(--body); font-size:11px; color:#9A9A96; text-align:center; margin:6px 0 16px;">nivel 4 de 7 · sigue jugando para desbloquear el siguiente</p>
+    <button onclick="closeMap()">Volver a jugar</button>
+  </div>
+
+</div>
+
+<script>
+// ---------- audio ----------
+function tone(freqs){
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  let t = ctx.currentTime;
+  freqs.forEach((f)=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.22,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.2);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t+0.22);
+    t+=0.09;
+  });
+}
+function bigChime(){
+  tone([523,659,784,1047,1319]);
+}
+
+// ---------- game state ----------
+let running=false, jumping=false, playerY=0, vel=0;
+const GRAVITY=-0.9, JUMP_VEL=13;
+let obstacles=[]; // {el, x}
+let lastSpawn=0, spawnGap=1600, speed=1.2;
+let passed=0, streak=0, score=0;
+let awaitingAnswer=false;
+const stage=document.getElementById('stage');
+const player=document.getElementById('player');
+
+const ANIMALS=[
+  {en:'CAT', es:'gato', sound:'MEOW', icon:'<circle cx="50" cy="55" r="30" fill="#2C2C2A"/><polygon points="28,35 20,10 40,28" fill="#2C2C2A"/><polygon points="72,35 80,10 60,28" fill="#2C2C2A"/><circle cx="40" cy="52" r="4" fill="#fff"/><circle cx="60" cy="52" r="4" fill="#fff"/><path d="M45,64 Q50,68 55,64" stroke="#fff" stroke-width="2" fill="none"/>'},
+  {en:'DOG', es:'perro', sound:'WOOF', icon:'<circle cx="50" cy="55" r="30" fill="#B5793A"/><ellipse cx="24" cy="45" rx="10" ry="18" fill="#B5793A"/><ellipse cx="76" cy="45" rx="10" ry="18" fill="#B5793A"/><circle cx="40" cy="52" r="4" fill="#141414"/><circle cx="60" cy="52" r="4" fill="#141414"/><ellipse cx="50" cy="66" rx="6" ry="4" fill="#141414"/>'},
+  {en:'LION', es:'león', sound:'ROAR', icon:'<circle cx="50" cy="55" r="34" fill="none" stroke="#B5793A" stroke-width="10" stroke-dasharray="4 3"/><circle cx="50" cy="55" r="22" fill="#D8A24A"/><circle cx="42" cy="52" r="4" fill="#141414"/><circle cx="58" cy="52" r="4" fill="#141414"/><path d="M45,64 Q50,68 55,64" stroke="#141414" stroke-width="2" fill="none"/>'},
+  {en:'BIRD', es:'pájaro', sound:'TWEET', icon:'<circle cx="50" cy="55" r="24" fill="#7C6AE8"/><polygon points="24,55 8,50 24,45" fill="#EF9F27"/><circle cx="42" cy="48" r="4" fill="#141414"/><path d="M30,70 Q50,85 70,70" fill="none" stroke="#7C6AE8" stroke-width="6"/>'},
+  {en:'ELEPHANT', es:'elefante', sound:null, icon:'<ellipse cx="18" cy="45" rx="14" ry="20" fill="#9A9C9E"/><ellipse cx="82" cy="45" rx="14" ry="20" fill="#9A9C9E"/><ellipse cx="50" cy="52" rx="34" ry="28" fill="#9A9C9E"/><path d="M50,70 Q45,92 55,98" stroke="#9A9C9E" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="38" cy="46" r="4" fill="#141414"/><circle cx="62" cy="46" r="4" fill="#141414"/>'},
+  {en:'FISH', es:'pez', sound:null, icon:'<ellipse cx="42" cy="52" rx="28" ry="20" fill="#3FA796"/><polygon points="70,52 92,36 92,68" fill="#3FA796"/><circle cx="32" cy="48" r="4" fill="#141414"/>'}
+];
+
+function speak(text){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-US'; u.rate=0.8;
+  speechSynthesis.speak(u);
+}
+let playerName='';
+let playerAge='6-8';
+
+// ---------- sistema de avatar por capas ----------
+const HAIR_SVGS=[
+  '<rect x="30" y="10" width="40" height="14" fill="#3B2A1E"/>',
+  '<rect x="30" y="14" width="40" height="8" fill="#3B2A1E"/><polygon points="32,14 38,2 44,14" fill="#3B2A1E"/><polygon points="46,14 52,2 58,14" fill="#3B2A1E"/><polygon points="60,14 66,2 72,14" fill="#3B2A1E"/>',
+  '<rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/>'
+];
+const ACC_SVGS=[
+  '',
+  '<rect x="38" y="36" width="8" height="4" fill="#141414"/><rect x="56" y="36" width="8" height="4" fill="#141414"/><rect x="46" y="37" width="10" height="2" fill="#141414"/>',
+  '<rect x="28" y="10" width="44" height="10" fill="#993C1D"/><rect x="28" y="18" width="44" height="8" fill="#141414"/>'
+];
+let hairIdx=0, shirtColor='#D8432E', accIdx=0;
+
+function buildAvatarSVG(w,h){
+  const hair = (accIdx===2) ? '' : HAIR_SVGS[hairIdx];
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 100 140">'
+    + hair
+    + '<rect x="32" y="24" width="36" height="28" fill="#F0C9A0"/>'
+    + '<rect x="40" y="34" width="6" height="6" fill="#141414"/>'
+    + '<rect x="58" y="34" width="6" height="6" fill="#141414"/>'
+    + '<rect x="12" y="56" width="14" height="28" fill="#F0C9A0"/>'
+    + '<rect x="78" y="56" width="14" height="28" fill="#F0C9A0"/>'
+    + '<rect x="28" y="54" width="44" height="36" fill="'+shirtColor+'"/>'
+    + '<rect x="32" y="92" width="16" height="24" fill="#2C2C2A"/>'
+    + '<rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/>'
+    + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
+    + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>'
+    + ACC_SVGS[accIdx]
+    + '</svg>';
+}
+
+function renderPreview(){
+  document.getElementById('avatarPreview').innerHTML = buildAvatarSVG(70,98);
+}
+
+function showTab(name){
+  ['hair','shirt','acc'].forEach(n=>{
+    document.getElementById('tab-'+n).classList.toggle('active', n===name);
+    document.getElementById('row-'+n).style.display = (n===name) ? 'flex' : 'none';
+  });
+}
+function pickHair(i,btn){ hairIdx=i; document.querySelectorAll('#row-hair .sw').forEach(b=>b.classList.remove('picked')); btn.classList.add('picked'); renderPreview(); }
+function pickShirt(c,btn){ shirtColor=c; document.querySelectorAll('#row-shirt .sw').forEach(b=>b.classList.remove('picked')); btn.classList.add('picked'); renderPreview(); }
+function pickAcc(i,btn){ accIdx=i; document.querySelectorAll('#row-acc .sw').forEach(b=>b.classList.remove('picked')); btn.classList.add('picked'); renderPreview(); }
+
+renderPreview();
+
+function selectAge(age, btn){
+  playerAge=age;
+  document.querySelectorAll('.age-btn').forEach(b=>{b.classList.remove('picked'); b.style.background='#fff'; b.style.color='var(--carbon)';});
+  btn.classList.add('picked'); btn.style.background='var(--carbon)'; btn.style.color='#EDEDED';
+}
+function goStep2(){
+  document.getElementById('onb-step1').style.display='none';
+  document.getElementById('onb-step2').style.display='block';
+}
+
+function startGame(){
+  playerName = document.getElementById('nameInput').value || 'Jugador';
+  document.getElementById('screen-start').style.display='none';
+  document.getElementById('screen-game').style.display='flex';
+  document.getElementById('player').innerHTML = buildAvatarSVG(34,48);
+  running=true;
+  lastSpawn=performance.now();
+  requestAnimationFrame(loop);
+}
+
+function endDemo(){
+  running=false;
+  document.getElementById('screen-game').style.display='none';
+  document.getElementById('screen-end').style.display='flex';
+}
+
+function openMap(){
+  wasRunning=running;
+  running=false;
+  const clone = document.getElementById('player').querySelector('svg').cloneNode(true);
+  clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+  const mapAv=document.getElementById('mapAvatar');
+  mapAv.innerHTML='';
+  mapAv.appendChild(clone);
+  document.getElementById('screen-map').classList.add('show');
+}
+function closeMap(){
+  document.getElementById('screen-map').classList.remove('show');
+  if(wasRunning){ running=true; requestAnimationFrame(loop); }
+}
+let wasRunning=false;
+
+function jump(){
+  if(!running || jumping) return;
+  jumping=true;
+  vel=JUMP_VEL;
+}
+
+document.getElementById('stage').addEventListener('pointerdown', jump);
+
+function spawnObstacle(){
+  const el=document.createElement('div');
+  el.className='obstacle';
+  el.style.left='100%';
+  stage.appendChild(el);
+  obstacles.push({el, x: stage.clientWidth, hit:false});
+}
+
+function loop(ts){
+  if(!running){ return; }
+
+  // player physics
+  if(jumping){
+    playerY += vel;
+    vel += GRAVITY;
+    if(playerY<=0){ playerY=0; jumping=false; vel=0; }
+    player.style.transform='translateY('+(-playerY)+'px)';
+  }
+
+  // spawn
+  if(ts-lastSpawn>spawnGap){
+    spawnObstacle();
+    lastSpawn=ts;
+  }
+
+  // move obstacles
+  const stageW=stage.clientWidth;
+  const playerRect={left: stageW*0.14, right: stageW*0.14+34, bottom:18, height:48};
+
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o=obstacles[i];
+    o.x -= speed*4;
+    o.el.style.left=o.x+'px';
+
+    // collision check (simple, only when not jumped high enough)
+    const oLeft=o.x, oRight=o.x+28;
+    if(oRight > playerRect.left && oLeft < playerRect.right && playerY<26 && !o.hit){
+      o.hit=true;
+      const svg=player.querySelector('svg');
+      svg.classList.remove('hit'); void svg.offsetWidth; svg.classList.add('hit');
+      tone([180,140]);
+    }
+
+    if(o.x < -40){
+      o.el.remove();
+      obstacles.splice(i,1);
+      passed++;
+      if(!o.hit){ score++; document.getElementById('score').textContent=score; }
+      if(passed % 3 === 0 && !awaitingAnswer){
+        showCheckpoint();
+      }
+    }
+  }
+
+  if(!awaitingAnswer) requestAnimationFrame(loop);
+}
+
+function showCheckpoint(){
+  running=false;
+  awaitingAnswer=true;
+
+  const target=ANIMALS[Math.floor(Math.random()*ANIMALS.length)];
+  const others=ANIMALS.filter(a=>a!==target);
+  const distractor=others[Math.floor(Math.random()*others.length)];
+
+  const types=['image-word','listen-point'];
+  if(target.sound) types.push('fill-blank');
+  const type=types[Math.floor(Math.random()*types.length)];
+
+  const swap=Math.random()<0.5;
+  const optA = swap ? target : distractor;
+  const optB = swap ? distractor : target;
+
+  const promptEl=document.getElementById('cp-prompt');
+  const subEl=document.getElementById('cp-sub');
+  const opt1=document.getElementById('opt1'), opt2=document.getElementById('opt2');
+  opt1.classList.remove('ok','bad'); opt2.classList.remove('ok','bad');
+
+  if(type==='image-word'){
+    promptEl.innerHTML='<svg width="80" height="80" viewBox="0 0 100 100">'+target.icon+'</svg>';
+    subEl.textContent='¿cómo se dice en inglés?';
+    opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
+    opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
+  } else if(type==='listen-point'){
+    promptEl.innerHTML='<div class="speaker" onclick="speak(\''+target.en+'\')"><svg width="50" height="50" viewBox="0 0 60 60"><path d="M8,22 L8,38 L20,38 L34,50 L34,10 L20,22 Z" fill="#141414"/><path d="M40,20 Q48,30 40,40" stroke="#141414" stroke-width="4" fill="none" stroke-linecap="round"/></svg></div>';
+    subEl.textContent='toca la imagen correcta';
+    opt1.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+optA.icon+'</svg>'; opt1.dataset.correct=String(optA===target);
+    opt2.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+optB.icon+'</svg>'; opt2.dataset.correct=String(optB===target);
+    setTimeout(()=>speak(target.en),300);
+  } else {
+    promptEl.innerHTML='<div style="font-size:16px;">The ___ says<br>"'+target.sound+'"</div>';
+    subEl.textContent='elige el animal correcto';
+    opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
+    opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
+  }
+
+  document.getElementById('cp-overlay').classList.add('show');
+}
+
+function answer(el){
+  const correct = el.dataset.correct === 'true';
+
+  if(correct){
+    el.classList.add('ok');
+    tone([523,659,784]);
+    streak = Math.min(streak+1,3);
+    updateDots();
+  } else {
+    el.classList.add('bad');
+    tone([220,196]);
+  }
+
+  setTimeout(()=>{
+    document.getElementById('cp-overlay').classList.remove('show');
+    awaitingAnswer=false;
+    if(streak>=3){
+      streak=0;
+      resetDots();
+      triggerNerdMode();
+    } else {
+      running=true;
+      requestAnimationFrame(loop);
+    }
+  }, 550);
+}
+
+function updateDots(){
+  for(let i=1;i<=3;i++){
+    const d=document.getElementById('dot'+i);
+    if(i<=streak && !d.classList.contains('on')){
+      d.classList.add('on','fresh');
+      setTimeout(()=>d.classList.remove('fresh'),400);
+    }
+  }
+}
+function resetDots(){
+  for(let i=1;i<=3;i++){
+    document.getElementById('dot'+i).classList.remove('on');
+  }
+}
+
+function triggerNerdMode(){
+  // arrasa los obstáculos que había en pantalla, como manda la fórmula del flip
+  obstacles.forEach(o=>{
+    o.el.style.transition='opacity .3s, transform .3s';
+    o.el.style.opacity='0';
+    o.el.style.transform='scale(1.4)';
+  });
+  setTimeout(()=>{
+    obstacles.forEach(o=>o.el.remove());
+    obstacles=[];
+  },300);
+
+  const ov=document.getElementById('nm-overlay');
+  ov.classList.add('show');
+  ov.style.backgroundColor='#FAEEDA';
+  ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.add('active'));
+  document.getElementById('nmBody').setAttribute('fill','#EF9F27');
+  document.getElementById('nm-text').style.opacity='1';
+  bigChime();
+
+  const duration=6000, start=Date.now();
+  const label=document.getElementById('nm-seconds');
+  const timer=setInterval(()=>{
+    const elapsed=Date.now()-start;
+    const left=Math.max(Math.ceil((duration-elapsed)/1000),0);
+    label.textContent=left+'s';
+    if(elapsed>=duration){
+      clearInterval(timer);
+      ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.remove('active'));
+      ov.classList.remove('show');
+      label.textContent='';
+      document.getElementById('nm-text').style.opacity='0';
+      lastSpawn=performance.now();
+      running=true;
+      requestAnimationFrame(loop);
+    }
+  },50);
+}
+</script>
+</body>
+</html>
