@@ -85,6 +85,11 @@
   .hitflash{position:absolute; inset:0; background:#D8432E; opacity:0; pointer-events:none; z-index:9;}
   .hitflash.show{opacity:0.35; transition:opacity .5s ease;}
 
+  .nmbanner{position:absolute; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); display:flex; gap:8px; align-items:center; background:#141414; color:#EF9F27; font-family:var(--display); font-weight:700; font-size:13px; padding:6px 14px; border-radius:20px; border:2px solid #EF9F27; z-index:7; transition:transform .3s ease; pointer-events:none;}
+  .nmbanner.show{transform:translateX(-50%) translateY(0);}
+  #nm-banner-seconds{font-family:var(--body); font-weight:400; color:#F5F5F0; font-size:12px;}
+  @media (prefers-reduced-motion:no-preference){ #tankPlayer.nerdglow{animation:dashglow .5s ease-in-out infinite;} }
+
   #tankHud{display:flex; gap:5px;}
   .life-dot{width:14px; height:10px; border-radius:2px; background:var(--red); border:1.5px solid var(--carbon);}
   .life-dot.lost{background:transparent; border-color:#C9CACC;}
@@ -233,6 +238,10 @@
       <div id="enemyLayer" class="tank-el"></div>
       <div id="bulletLayer" class="tank-el"></div>
       <div id="hitFlash" class="tank-el hitflash"></div>
+      <div id="nm-banner-tank" class="tank-el nmbanner">
+        <span>NERD MODE</span>
+        <span id="nm-banner-seconds"></span>
+      </div>
       <div id="tankPlayer" class="tank-el">
         <svg width="46" height="46" viewBox="0 0 60 60">
           <defs>
@@ -335,7 +344,17 @@ function getAudioCtx(){
   if(audioCtx.state==='suspended'){ audioCtx.resume(); }
   return audioCtx;
 }
-document.addEventListener('pointerdown', ()=>{ getAudioCtx(); }, {capture:true});
+let audioPrimed=false;
+function primeAudio(){
+  if(audioPrimed) return;
+  audioPrimed=true;
+  const ctx=getAudioCtx();
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  g.gain.value=0.00001;
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+0.05);
+}
+document.addEventListener('pointerdown', primeAudio, {capture:true, once:true});
 
 function tone(freqs){
   const ctx = getAudioCtx();
@@ -368,7 +387,7 @@ const player=document.getElementById('player');
 const ANIMALS=[
   {en:'CAT', es:'gato', sound:'MEOW', icon:'<circle cx="50" cy="55" r="30" fill="#2C2C2A"/><polygon points="28,35 20,10 40,28" fill="#2C2C2A"/><polygon points="72,35 80,10 60,28" fill="#2C2C2A"/><circle cx="40" cy="52" r="4" fill="#fff"/><circle cx="60" cy="52" r="4" fill="#fff"/><path d="M45,64 Q50,68 55,64" stroke="#fff" stroke-width="2" fill="none"/>'},
   {en:'DOG', es:'perro', sound:'WOOF', icon:'<circle cx="50" cy="55" r="30" fill="#B5793A"/><ellipse cx="24" cy="45" rx="10" ry="18" fill="#B5793A"/><ellipse cx="76" cy="45" rx="10" ry="18" fill="#B5793A"/><circle cx="40" cy="52" r="4" fill="#141414"/><circle cx="60" cy="52" r="4" fill="#141414"/><ellipse cx="50" cy="66" rx="6" ry="4" fill="#141414"/>'},
-  {en:'LION', es:'león', sound:'ROAR', icon:'<circle cx="50" cy="55" r="34" fill="none" stroke="#B5793A" stroke-width="10" stroke-dasharray="4 3"/><circle cx="50" cy="55" r="22" fill="#D8A24A"/><circle cx="42" cy="52" r="4" fill="#141414"/><circle cx="58" cy="52" r="4" fill="#141414"/><path d="M45,64 Q50,68 55,64" stroke="#141414" stroke-width="2" fill="none"/>'},
+  {en:'LION', es:'león', sound:'ROAR', icon:'<circle cx="80" cy="55" r="13" fill="#8A5A32"/><circle cx="71" cy="76" r="13" fill="#8A5A32"/><circle cx="50" cy="85" r="13" fill="#8A5A32"/><circle cx="29" cy="76" r="13" fill="#8A5A32"/><circle cx="20" cy="55" r="13" fill="#8A5A32"/><circle cx="29" cy="34" r="13" fill="#8A5A32"/><circle cx="50" cy="25" r="13" fill="#8A5A32"/><circle cx="71" cy="34" r="13" fill="#8A5A32"/><circle cx="50" cy="55" r="24" fill="#D8A24A"/><circle cx="42" cy="52" r="4" fill="#141414"/><circle cx="58" cy="52" r="4" fill="#141414"/><path d="M45,64 Q50,68 55,64" stroke="#141414" stroke-width="2" fill="none"/>'},
   {en:'BIRD', es:'pájaro', sound:'TWEET', icon:'<circle cx="50" cy="55" r="24" fill="#7C6AE8"/><polygon points="24,55 8,50 24,45" fill="#EF9F27"/><circle cx="42" cy="48" r="4" fill="#141414"/><path d="M30,70 Q50,85 70,70" fill="none" stroke="#7C6AE8" stroke-width="6"/>'},
   {en:'ELEPHANT', es:'elefante', sound:null, icon:'<ellipse cx="18" cy="45" rx="14" ry="20" fill="#9A9C9E"/><ellipse cx="82" cy="45" rx="14" ry="20" fill="#9A9C9E"/><ellipse cx="50" cy="52" rx="34" ry="28" fill="#9A9C9E"/><path d="M50,70 Q45,92 55,98" stroke="#9A9C9E" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="38" cy="46" r="4" fill="#141414"/><circle cx="62" cy="46" r="4" fill="#141414"/>'},
   {en:'FISH', es:'pez', sound:null, icon:'<ellipse cx="42" cy="52" rx="28" ry="20" fill="#3FA796"/><polygon points="70,52 92,36 92,68" fill="#3FA796"/><circle cx="32" cy="48" r="4" fill="#141414"/>'}
@@ -612,12 +631,13 @@ function showCheckpoint(){
     opt2.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+displayIcon(optB,worldKey)+'</svg>'; opt2.dataset.correct=String(optB===target);
     setTimeout(()=>speak(target.en),300);
   } else if(worldKey==='animals'){
-    promptEl.innerHTML='<div style="font-size:16px;">The ___ says<br>"'+target.sound+'"</div>';
-    subEl.textContent='elige el animal correcto';
+    promptEl.innerHTML='<div class="speaker" onclick="speak(\''+target.sound+'\')"><svg width="50" height="50" viewBox="0 0 60 60"><path d="M8,22 L8,38 L20,38 L34,50 L34,10 L20,22 Z" fill="#141414"/><path d="M40,20 Q48,30 40,40" stroke="#141414" stroke-width="4" fill="none" stroke-linecap="round"/></svg></div>';
+    subEl.textContent='¿qué animal hace este sonido?';
+    setTimeout(()=>speak(target.sound),300);
     opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
     opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
   } else {
-    promptEl.innerHTML='<svg width="50" height="50" viewBox="0 0 100 100">'+target.ctxIcon+'</svg><div style="font-size:15px; margin-top:4px;">'+target.ctx+' ___</div>';
+    promptEl.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+target.ctxIcon+'</svg>';
     subEl.textContent='elige el color correcto';
     opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
     opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
@@ -677,37 +697,60 @@ function triggerNerdMode(){
       o.el.style.transform='scale(1.4)';
     });
     setTimeout(()=>{ obstacles.forEach(o=>o.el.remove()); obstacles=[]; },300);
+
+    const ov=document.getElementById('nm-overlay');
+    ov.classList.add('show');
+    ov.style.backgroundColor='#FAEEDA';
+    ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.add('active'));
+    document.getElementById('nmBody').setAttribute('fill','#EF9F27');
+    document.getElementById('nm-text').style.opacity='1';
+    bigChime();
+
+    const duration=6000, start=Date.now();
+    const label=document.getElementById('nm-seconds');
+    const timer=setInterval(()=>{
+      const elapsed=Date.now()-start;
+      const left=Math.max(Math.ceil((duration-elapsed)/1000),0);
+      label.textContent=left+'s';
+      if(elapsed>=duration){
+        clearInterval(timer);
+        ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.remove('active'));
+        ov.classList.remove('show');
+        label.textContent='';
+        document.getElementById('nm-text').style.opacity='0';
+        lastSpawn=performance.now();
+        running=true;
+        requestAnimationFrame(loop);
+      }
+    },50);
+
   } else {
+    // Tank Mode: Nerd Mode se vive DENTRO del juego, nunca lo detiene
     tankNerdActive=true;
     enemies.forEach(o=>destroyEnemy(o, true));
+    document.getElementById('tankPlayer').classList.add('nerdglow');
+    bigChime();
+
+    const banner=document.getElementById('nm-banner-tank');
+    const label=document.getElementById('nm-banner-seconds');
+    banner.classList.add('show');
+
+    running=true; awaitingAnswer=false;
+    requestAnimationFrame(tankLoop);
+
+    const duration=6000, start=Date.now();
+    const timer=setInterval(()=>{
+      const elapsed=Date.now()-start;
+      const left=Math.max(Math.ceil((duration-elapsed)/1000),0);
+      label.textContent=left+'s';
+      if(elapsed>=duration){
+        clearInterval(timer);
+        tankNerdActive=false;
+        banner.classList.remove('show');
+        document.getElementById('tankPlayer').classList.remove('nerdglow');
+      }
+    },50);
   }
-
-  const ov=document.getElementById('nm-overlay');
-  ov.classList.add('show');
-  ov.style.backgroundColor='#FAEEDA';
-  ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.add('active'));
-  document.getElementById('nmBody').setAttribute('fill','#EF9F27');
-  document.getElementById('nm-text').style.opacity='1';
-  bigChime();
-
-  const duration=6000, start=Date.now();
-  const label=document.getElementById('nm-seconds');
-  const timer=setInterval(()=>{
-    const elapsed=Date.now()-start;
-    const left=Math.max(Math.ceil((duration-elapsed)/1000),0);
-    label.textContent=left+'s';
-    if(elapsed>=duration){
-      clearInterval(timer);
-      tankNerdActive=false;
-      ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.remove('active'));
-      ov.classList.remove('show');
-      label.textContent='';
-      document.getElementById('nm-text').style.opacity='0';
-      lastSpawn=performance.now();
-      running=true;
-      requestAnimationFrame(currentGame==='fire' ? loop : tankLoop);
-    }
-  },50);
 }
 
 // ---------- Tank Mode ----------
@@ -927,12 +970,16 @@ document.getElementById('mineBtn').addEventListener('pointerdown', (e)=>{
   const btn=document.getElementById('dbtn-'+dir);
   btn.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
+    try{ btn.setPointerCapture(e.pointerId); }catch(err){}
     moveFlags[dir]=true; tankDir=dir;
     btn.classList.add('pressed');
     document.getElementById('tankPlayer').style.transform='rotate('+DIRDEG[dir]+'deg)';
   });
-  ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev, ()=>{ moveFlags[dir]=false; btn.classList.remove('pressed'); }));
+  ['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(ev=>btn.addEventListener(ev, ()=>{ moveFlags[dir]=false; btn.classList.remove('pressed'); }));
 });
+
+// seguro de respaldo: si la pestaña pierde el foco, se sueltan todas las direcciones
+window.addEventListener('blur', ()=>{ moveFlags={up:false,down:false,left:false,right:false}; document.querySelectorAll('.dbtn').forEach(b=>b.classList.remove('pressed')); });
 document.getElementById('fireBtn').addEventListener('pointerdown', (e)=>{
   e.preventDefault();
   fireBullet();
