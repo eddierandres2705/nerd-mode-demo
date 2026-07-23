@@ -86,6 +86,8 @@
   .hitflash.show{opacity:0.35; transition:opacity .5s ease;}
 
   .nmbanner{position:absolute; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); display:flex; gap:8px; align-items:center; background:#141414; color:#EF9F27; font-family:var(--display); font-weight:700; font-size:13px; padding:6px 14px; border-radius:20px; border:2px solid #EF9F27; z-index:7; transition:transform .3s ease; pointer-events:none;}
+  .mapbanner{position:absolute; top:40%; left:50%; transform:translate(-50%,-50%) scale(0.7); opacity:0; background:#141414; color:#3FA796; font-family:var(--display); font-weight:700; font-size:20px; padding:16px 28px; border-radius:16px; border:3px solid #3FA796; z-index:9; transition:transform .3s ease, opacity .3s ease; pointer-events:none;}
+  .mapbanner.show{transform:translate(-50%,-50%) scale(1); opacity:1;}
   .nmbanner.show{transform:translateX(-50%) translateY(0);}
   #nm-banner-seconds{font-family:var(--body); font-weight:400; color:#F5F5F0; font-size:12px;}
   @media (prefers-reduced-motion:no-preference){ #tankPlayer.nerdglow{animation:dashglow .5s ease-in-out infinite;} }
@@ -110,8 +112,8 @@
   #mineBtn{width:52px; height:52px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #ffffff, #C9CACC); border:3px solid var(--carbon); border-bottom-width:6px; box-shadow:0 3px 0 rgba(0,0,0,0.2); touch-action:none;}
   #mineBtn.pressed{border-bottom-width:2px; transform:translateY(3px);}
   #mineBtn.disabled{opacity:0.4;}
-  .mine{position:absolute; width:22px; height:22px; border-radius:50%; background:#2C2C2A; border:2px solid #EF9F27;}
-  @media (prefers-reduced-motion:no-preference){ .mine{animation:minepulse 0.8s ease-in-out infinite;} }
+  .mine{position:absolute; width:22px; height:22px;}
+  @media (prefers-reduced-motion:no-preference){ .minelight{animation:minepulse 0.5s ease-in-out infinite;} }
   @keyframes minepulse{0%,100%{opacity:1}50%{opacity:0.4}}
   .minefire{position:absolute; width:80px; height:80px; border-radius:50%; background:radial-gradient(circle, #FFEFA8 0%, #EF9F27 35%, #D8432E 60%, rgba(216,67,46,0) 75%); pointer-events:none;}
   @keyframes firepop{0%{transform:scale(0.3); opacity:1}100%{transform:scale(1.4); opacity:0}}
@@ -249,6 +251,7 @@
         <span>NERD MODE</span>
         <span id="nm-banner-seconds"></span>
       </div>
+      <div id="map-banner" class="tank-el mapbanner">¡Mapa superado!</div>
       <div id="tankPlayer" class="tank-el">
         <svg width="46" height="46" viewBox="0 0 60 60">
           <defs>
@@ -365,15 +368,23 @@ function primeAudio(){
 document.addEventListener('pointerdown', primeAudio, {capture:true, once:true});
 
 function testSound(){
-  primeAudio();
-  tone([523,659,784]);
   const b=document.getElementById('soundBtn');
-  b.textContent='✓ Sonando...';
-  b.style.background='#639922';
+  try{
+    primeAudio();
+    const ctx=getAudioCtx();
+    tone([523,659,784]);
+    b.textContent='Estado: '+ctx.state+' — ¿lo oíste?';
+    b.style.background='#639922';
+  }catch(err){
+    b.textContent='ERROR: '+err.message;
+    b.style.background='#D8432E';
+    b.style.color='#fff';
+  }
   setTimeout(()=>{
     b.textContent='Probar sonido';
     b.style.background='';
-  },1200);
+    b.style.color='';
+  },3500);
 }
 
 function tone(freqs){
@@ -816,13 +827,39 @@ let turboReady=true, turboActive=false;
 const DIRDEG={up:0,right:90,down:180,left:270};
 const DIRDELTA={up:{dx:0,dy:-1},down:{dx:0,dy:1},left:{dx:-1,dy:0},right:{dx:1,dy:0}};
 
+const MAP_LAYOUTS=[
+  (w,h)=>[
+    {x:w*0.15, y:h*0.28, w:34, h:34, type:'tree'},
+    {x:w*0.68, y:h*0.22, w:34, h:34, type:'tree'},
+    {x:w*0.72, y:h*0.50, w:100, h:70, type:'lake'},
+    {x:w*0.20, y:h*0.62, w:34, h:34, type:'tree'},
+    {x:w*0.45, y:h*0.40, w:34, h:34, type:'tree'}
+  ],
+  (w,h)=>[
+    {x:w*0.10, y:h*0.45, w:90, h:60, type:'lake'},
+    {x:w*0.55, y:h*0.20, w:34, h:34, type:'tree'},
+    {x:w*0.75, y:h*0.35, w:34, h:34, type:'tree'},
+    {x:w*0.30, y:h*0.65, w:34, h:34, type:'tree'},
+    {x:w*0.60, y:h*0.68, w:34, h:34, type:'tree'},
+    {x:w*0.20, y:h*0.20, w:34, h:34, type:'tree'}
+  ],
+  (w,h)=>[
+    {x:w*0.40, y:h*0.42, w:80, h:55, type:'lake'},
+    {x:w*0.12, y:h*0.20, w:34, h:34, type:'tree'},
+    {x:w*0.75, y:h*0.15, w:34, h:34, type:'tree'},
+    {x:w*0.15, y:h*0.65, w:34, h:34, type:'tree'},
+    {x:w*0.70, y:h*0.68, w:34, h:34, type:'tree'},
+    {x:w*0.45, y:h*0.15, w:34, h:34, type:'tree'},
+    {x:w*0.45, y:h*0.75, w:34, h:34, type:'tree'}
+  ]
+];
+let mapIndex=0, mapKills=0, mapGoal=8, mapSpeedMult=1, mapTransitioning=false;
+
 function initTankArena(){
-  enemies=[]; bullets=[]; enemyBullets=[]; mines=[];
+  enemies=[]; bullets=[]; enemyBullets=[]; mines=[]; blasts=[];
   lives=maxLives; invulnerable=false; turboActive=false; turboReady=true;
+  mapIndex=0; mapKills=0; mapGoal=8; mapSpeedMult=1; mapTransitioning=false;
   updateLivesUI();
-  document.getElementById('enemyLayer').innerHTML='';
-  document.getElementById('bulletLayer').innerHTML='';
-  document.getElementById('wallLayer').innerHTML='';
   document.getElementById('tankPlayer').classList.remove('blink');
 
   const w=stage.clientWidth, h=stage.clientHeight;
@@ -831,13 +868,17 @@ function initTankArena(){
   tp.style.left=tankX+'px'; tp.style.top=tankY+'px';
   tp.style.transform='rotate(0deg)';
 
-  WALLS=[
-    {x:w*0.15, y:h*0.28, w:34, h:34, type:'tree'},
-    {x:w*0.68, y:h*0.22, w:34, h:34, type:'tree'},
-    {x:w*0.72, y:h*0.50, w:100, h:70, type:'lake'},
-    {x:w*0.20, y:h*0.62, w:34, h:34, type:'tree'},
-    {x:w*0.45, y:h*0.40, w:34, h:34, type:'tree'}
-  ];
+  loadMap(0);
+}
+
+function loadMap(idx){
+  document.getElementById('enemyLayer').innerHTML='';
+  document.getElementById('bulletLayer').innerHTML='';
+  document.getElementById('wallLayer').innerHTML='';
+  enemies=[]; bullets=[]; enemyBullets=[]; mines=[]; blasts=[];
+
+  const w=stage.clientWidth, h=stage.clientHeight;
+  WALLS = MAP_LAYOUTS[idx % MAP_LAYOUTS.length](w,h);
   WALLS.forEach(wl=>{
     const el=document.createElement('div');
     el.style.left=wl.x+'px'; el.style.top=wl.y+'px'; el.style.width=wl.w+'px'; el.style.height=wl.h+'px';
@@ -850,7 +891,25 @@ function initTankArena(){
     document.getElementById('wallLayer').appendChild(el);
   });
 
-  spawnEnemyPatrol(); spawnEnemyPatrol(); spawnEnemyPatrol();
+  const count=Math.min(3+idx,6);
+  for(let i=0;i<count;i++) spawnEnemyPatrol();
+}
+
+function mapCleared(){
+  mapTransitioning=true;
+  const banner=document.getElementById('map-banner');
+  banner.textContent='¡Mapa '+(mapIndex+1)+' superado!';
+  banner.classList.add('show');
+  bigChime();
+  setTimeout(()=>{
+    banner.classList.remove('show');
+    mapIndex++;
+    mapKills=0;
+    mapGoal+=2;
+    mapSpeedMult*=1.12;
+    loadMap(mapIndex);
+    mapTransitioning=false;
+  },2200);
 }
 
 function collidesWithWalls(x,y,w,h){
@@ -866,7 +925,7 @@ function spawnEnemyPatrol(){
   const y=40+Math.random()*100;
   const x=20+Math.random()*(stageW-60);
   el.style.left=x+'px'; el.style.top=y+'px';
-  const obj={el, x, y, dir: Math.random()<0.5?1:-1, speed:1+Math.random(), hit:false};
+  const obj={el, x, y, dir: Math.random()<0.5?1:-1, speed:(1+Math.random())*mapSpeedMult, hit:false};
   document.getElementById('enemyLayer').appendChild(el);
   enemies.push(obj);
 }
@@ -877,14 +936,18 @@ function destroyEnemy(o, silent){
   o.el.classList.add('boom');
   if(!silent){
     explosionSound();
-    score++; passed++;
+    score++; passed++; mapKills++;
     document.getElementById('score').textContent=score;
   }
   setTimeout(()=>{
     o.el.remove();
     enemies=enemies.filter(e=>e!==o);
-    if(running) spawnEnemyPatrol();
+    if(running && !mapTransitioning) spawnEnemyPatrol();
   },300);
+  if(!silent && !mapTransitioning && mapKills>=mapGoal){
+    mapCleared();
+    return;
+  }
   if(!silent && passed%3===0 && !awaitingAnswer){
     showCheckpoint();
   }
@@ -991,6 +1054,7 @@ document.getElementById('turboBtn').addEventListener('pointerdown', (e)=>{
 });
 
 let mines=[];
+let blasts=[];
 let mineReady=true;
 function placeMine(){
   if(!mineReady) return;
@@ -1001,6 +1065,7 @@ function placeMine(){
 
   const el=document.createElement('div');
   el.className='mine';
+  el.innerHTML='<svg width="22" height="22" viewBox="0 0 60 60"><line x1="30" y1="4" x2="30" y2="16" stroke="#2C2C2A" stroke-width="5"/><line x1="30" y1="44" x2="30" y2="56" stroke="#2C2C2A" stroke-width="5"/><line x1="4" y1="30" x2="16" y2="30" stroke="#2C2C2A" stroke-width="5"/><line x1="44" y1="30" x2="56" y2="30" stroke="#2C2C2A" stroke-width="5"/><line x1="10" y1="10" x2="18" y2="18" stroke="#2C2C2A" stroke-width="5"/><line x1="50" y1="10" x2="42" y2="18" stroke="#2C2C2A" stroke-width="5"/><line x1="10" y1="50" x2="18" y2="42" stroke="#2C2C2A" stroke-width="5"/><line x1="50" y1="50" x2="42" y2="42" stroke="#2C2C2A" stroke-width="5"/><circle cx="30" cy="30" r="15" fill="#2C2C2A" stroke="#141414" stroke-width="2"/><circle cx="24" cy="24" r="3" fill="#5F5E5A" opacity="0.6"/><circle cx="30" cy="30" r="5" fill="#EF9F27" class="minelight"/></svg>';
   const mx=tankX+8, my=tankY+8;
   el.style.left=mx+'px'; el.style.top=my+'px';
   document.getElementById('bulletLayer').appendChild(el);
@@ -1121,6 +1186,18 @@ function tankLoop(){
     }
   }
 
+  for(let i=blasts.length-1;i>=0;i--){
+    const bl=blasts[i];
+    const t=now-bl.start;
+    if(t>bl.duration){ blasts.splice(i,1); continue; }
+    const curR=bl.maxR*Math.min(t/bl.duration,1);
+    enemies.forEach(en=>{
+      if(en.hit) return;
+      const ddx=(en.x+20)-bl.x, ddy=(en.y+13)-bl.y;
+      if(Math.sqrt(ddx*ddx+ddy*ddy) < curR+13){ destroyEnemy(en); }
+    });
+  }
+
   }catch(err){
     console.error('tankLoop error (juego sigue corriendo):', err);
   }
@@ -1136,11 +1213,7 @@ function detonateMine(m){
   boom.style.top=(m.y-40)+'px';
   document.getElementById('bulletLayer').appendChild(boom);
   setTimeout(()=>boom.remove(),450);
-  enemies.forEach(en=>{
-    if(en.hit) return;
-    const ddx=(en.x+20)-m.x, ddy=(en.y+13)-m.y;
-    if(Math.sqrt(ddx*ddx+ddy*ddy) < 70){ destroyEnemy(en); }
-  });
+  blasts.push({x:m.x, y:m.y, start:performance.now(), duration:450, maxR:70});
 }
 
 function fireSound(){
