@@ -113,6 +113,12 @@
   .mine{position:absolute; width:22px; height:22px; border-radius:50%; background:#2C2C2A; border:2px solid #EF9F27;}
   @media (prefers-reduced-motion:no-preference){ .mine{animation:minepulse 0.8s ease-in-out infinite;} }
   @keyframes minepulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .minefire{position:absolute; width:80px; height:80px; border-radius:50%; background:radial-gradient(circle, #FFEFA8 0%, #EF9F27 35%, #D8432E 60%, rgba(216,67,46,0) 75%); pointer-events:none;}
+  @keyframes firepop{0%{transform:scale(0.3); opacity:1}100%{transform:scale(1.4); opacity:0}}
+  @media (prefers-reduced-motion:no-preference){ .minefire{animation:firepop .45s ease-out forwards;} }
+  .nmspark{position:absolute; width:6px; height:6px; border-radius:50%; background:#EF9F27; box-shadow:0 0 6px #EF9F27; pointer-events:none;}
+  @keyframes sparkfade{0%{opacity:1; transform:scale(1)}100%{opacity:0; transform:scale(0.3)}}
+  @media (prefers-reduced-motion:no-preference){ .nmspark{animation:sparkfade .45s ease-out forwards;} }
 
   .overlay{position:absolute; inset:0; background:var(--bone); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; z-index:10;}
   .overlay.show{display:flex;}
@@ -164,6 +170,7 @@
       <svg width="20" height="20" viewBox="0 0 120 120"><rect x="18" y="18" width="84" height="84" rx="10" fill="#C9CACC" stroke="#141414" stroke-width="8" transform="rotate(45 60 60)"/><polygon points="60,60 119.4,60 60,119.4" fill="#D8432E"/><path d="M 64,34 L 46,64 L 58,64 L 54,86 L 76,54 L 64,54 Z" fill="#141414"/></svg>
       <span class="brandname">Nerd Mode</span>
     </div>
+    <button id="soundBtn" onclick="testSound()" style="position:absolute; top:20px; right:20px; width:auto; padding:8px 12px; font-size:11px; border-width:1.5px;">Probar sonido</button>
 
     <div id="onb-step1">
       <div id="avatarPreview" style="margin-bottom:10px;"></div>
@@ -258,6 +265,7 @@
           <rect x="20" y="6" width="20" height="16" rx="3" fill="url(#playerBodyGrad)" stroke="#141414" stroke-width="2"/>
           <rect x="27" y="-6" width="6" height="16" fill="#1F5C50" stroke="#141414" stroke-width="1"/>
         </svg>
+        <div id="tankAvatarHead" style="position:absolute; left:15px; top:3px; width:16px; height:16px; pointer-events:none;"></div>
       </div>
     </div>
 
@@ -356,6 +364,18 @@ function primeAudio(){
 }
 document.addEventListener('pointerdown', primeAudio, {capture:true, once:true});
 
+function testSound(){
+  primeAudio();
+  tone([523,659,784]);
+  const b=document.getElementById('soundBtn');
+  b.textContent='✓ Sonando...';
+  b.style.background='#639922';
+  setTimeout(()=>{
+    b.textContent='Probar sonido';
+    b.style.background='';
+  },1200);
+}
+
 function tone(freqs){
   const ctx = getAudioCtx();
   let t = ctx.currentTime;
@@ -385,26 +405,28 @@ const stage=document.getElementById('stage');
 const player=document.getElementById('player');
 
 const ANIMALS=[
-  {en:'CAT', es:'gato', sound:'MEOW', icon:'<circle cx="50" cy="55" r="30" fill="#2C2C2A"/><polygon points="28,35 20,10 40,28" fill="#2C2C2A"/><polygon points="72,35 80,10 60,28" fill="#2C2C2A"/><circle cx="40" cy="52" r="4" fill="#fff"/><circle cx="60" cy="52" r="4" fill="#fff"/><path d="M45,64 Q50,68 55,64" stroke="#fff" stroke-width="2" fill="none"/>'},
-  {en:'DOG', es:'perro', sound:'WOOF', icon:'<circle cx="50" cy="55" r="30" fill="#B5793A"/><ellipse cx="24" cy="45" rx="10" ry="18" fill="#B5793A"/><ellipse cx="76" cy="45" rx="10" ry="18" fill="#B5793A"/><circle cx="40" cy="52" r="4" fill="#141414"/><circle cx="60" cy="52" r="4" fill="#141414"/><ellipse cx="50" cy="66" rx="6" ry="4" fill="#141414"/>'},
-  {en:'LION', es:'león', sound:'ROAR', icon:'<circle cx="80" cy="55" r="13" fill="#8A5A32"/><circle cx="71" cy="76" r="13" fill="#8A5A32"/><circle cx="50" cy="85" r="13" fill="#8A5A32"/><circle cx="29" cy="76" r="13" fill="#8A5A32"/><circle cx="20" cy="55" r="13" fill="#8A5A32"/><circle cx="29" cy="34" r="13" fill="#8A5A32"/><circle cx="50" cy="25" r="13" fill="#8A5A32"/><circle cx="71" cy="34" r="13" fill="#8A5A32"/><circle cx="50" cy="55" r="24" fill="#D8A24A"/><circle cx="42" cy="52" r="4" fill="#141414"/><circle cx="58" cy="52" r="4" fill="#141414"/><path d="M45,64 Q50,68 55,64" stroke="#141414" stroke-width="2" fill="none"/>'},
-  {en:'BIRD', es:'pájaro', sound:'TWEET', icon:'<circle cx="50" cy="55" r="24" fill="#7C6AE8"/><polygon points="24,55 8,50 24,45" fill="#EF9F27"/><circle cx="42" cy="48" r="4" fill="#141414"/><path d="M30,70 Q50,85 70,70" fill="none" stroke="#7C6AE8" stroke-width="6"/>'},
-  {en:'ELEPHANT', es:'elefante', sound:null, icon:'<ellipse cx="18" cy="45" rx="14" ry="20" fill="#9A9C9E"/><ellipse cx="82" cy="45" rx="14" ry="20" fill="#9A9C9E"/><ellipse cx="50" cy="52" rx="34" ry="28" fill="#9A9C9E"/><path d="M50,70 Q45,92 55,98" stroke="#9A9C9E" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="38" cy="46" r="4" fill="#141414"/><circle cx="62" cy="46" r="4" fill="#141414"/>'},
-  {en:'FISH', es:'pez', sound:null, icon:'<ellipse cx="42" cy="52" rx="28" ry="20" fill="#3FA796"/><polygon points="70,52 92,36 92,68" fill="#3FA796"/><circle cx="32" cy="48" r="4" fill="#141414"/>'}
+  {en:'CAT', es:'gato', sound:'MEOW', emoji:'1f431'},
+  {en:'DOG', es:'perro', sound:'WOOF', emoji:'1f436'},
+  {en:'LION', es:'león', sound:'ROAR', emoji:'1f981'},
+  {en:'BIRD', es:'pájaro', sound:'TWEET', emoji:'1f426'},
+  {en:'ELEPHANT', es:'elefante', sound:null, emoji:'1f418'},
+  {en:'FISH', es:'pez', sound:null, emoji:'1f41f'}
 ];
 
 const COLORS=[
-  {en:'RED', es:'rojo', hex:'#D8432E', ctx:'Apples are', ctxIcon:'<circle cx="50" cy="58" r="26" fill="none" stroke="#141414" stroke-width="4"/><path d="M50,32 Q54,22 62,24" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/>'},
-  {en:'BLUE', es:'azul', hex:'#3B82F6', ctx:'The sky is', ctxIcon:'<path d="M30,60 a15,15 0 0,1 -2,-30 a20,20 0 0,1 38,-4 a16,16 0 0,1 2,34 Z" fill="none" stroke="#141414" stroke-width="4"/>'},
-  {en:'YELLOW', es:'amarillo', hex:'#F5C518', ctx:'The sun is', ctxIcon:'<circle cx="50" cy="50" r="18" fill="none" stroke="#141414" stroke-width="4"/><line x1="50" y1="18" x2="50" y2="26" stroke="#141414" stroke-width="4"/><line x1="50" y1="74" x2="50" y2="82" stroke="#141414" stroke-width="4"/><line x1="18" y1="50" x2="26" y2="50" stroke="#141414" stroke-width="4"/><line x1="74" y1="50" x2="82" y2="50" stroke="#141414" stroke-width="4"/><line x1="27" y1="27" x2="33" y2="33" stroke="#141414" stroke-width="4"/><line x1="67" y1="67" x2="73" y2="73" stroke="#141414" stroke-width="4"/><line x1="73" y1="27" x2="67" y2="33" stroke="#141414" stroke-width="4"/><line x1="33" y1="67" x2="27" y2="73" stroke="#141414" stroke-width="4"/>'},
-  {en:'GREEN', es:'verde', hex:'#3FA796', ctx:'Grass is', ctxIcon:'<path d="M30,80 Q28,50 35,30" fill="none" stroke="#141414" stroke-width="4" stroke-linecap="round"/><path d="M50,80 Q52,45 50,20" fill="none" stroke="#141414" stroke-width="4" stroke-linecap="round"/><path d="M70,80 Q72,50 65,30" fill="none" stroke="#141414" stroke-width="4" stroke-linecap="round"/>'},
-  {en:'BLACK', es:'negro', hex:'#141414', ctx:'The night is', ctxIcon:'<path d="M60,30 A24,24 0 1,0 60,78 A18,18 0 1,1 60,30 Z" fill="none" stroke="#141414" stroke-width="4"/><circle cx="78" cy="30" r="2.5" fill="#141414"/><circle cx="82" cy="42" r="2" fill="#141414"/>'},
-  {en:'WHITE', es:'blanco', hex:'#FFFFFF', ctx:'Snow is', ctxIcon:'<line x1="50" y1="20" x2="50" y2="80" stroke="#141414" stroke-width="4"/><line x1="20" y1="50" x2="80" y2="50" stroke="#141414" stroke-width="4"/><line x1="29" y1="29" x2="71" y2="71" stroke="#141414" stroke-width="4"/><line x1="71" y1="29" x2="29" y2="71" stroke="#141414" stroke-width="4"/>'}
+  {en:'RED', es:'rojo', hex:'#D8432E', ctx:'Apples are', ctxEmoji:'1f34e'},
+  {en:'BLUE', es:'azul', hex:'#3B82F6', ctx:'Blueberries are', ctxEmoji:'1fad0'},
+  {en:'YELLOW', es:'amarillo', hex:'#F5C518', ctx:'The sun is', ctxEmoji:'1f31e'},
+  {en:'GREEN', es:'verde', hex:'#3FA796', ctx:'Leaves are', ctxEmoji:'1f343'},
+  {en:'BLACK', es:'negro', hex:'#141414', ctx:'The night is', ctxEmoji:'1f319'},
+  {en:'WHITE', es:'blanco', hex:'#FFFFFF', ctx:'Snow is', ctxEmoji:'2603'}
 ];
 
 const WORLDS={animals:ANIMALS, colors:COLORS};
-function swatchSVG(hex){ return '<circle cx="50" cy="50" r="35" fill="'+hex+'" stroke="#141414" stroke-width="3"/>'; }
-function displayIcon(item, worldKey){ return worldKey==='colors' ? swatchSVG(item.hex) : item.icon; }
+const IMG_BASE='https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/';
+function emojiImg(code, size){ return '<img src="'+IMG_BASE+code+'.svg" width="'+size+'" height="'+size+'" draggable="false" style="display:block;" alt="">'; }
+function swatchSVG(hex, size){ return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="'+hex+'" stroke="#141414" stroke-width="3"/></svg>'; }
+function displayIcon(item, worldKey, size){ return worldKey==='colors' ? swatchSVG(item.hex, size) : emojiImg(item.emoji, size); }
 
 function speak(text){
   if(!window.speechSynthesis) return;
@@ -443,6 +465,17 @@ function buildAvatarSVG(w,h){
     + '<rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/>'
     + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
     + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>'
+    + ACC_SVGS[accIdx]
+    + '</svg>';
+}
+
+function buildAvatarHeadSVG(w,h){
+  const hair = (accIdx===2) ? '' : HAIR_SVGS[hairIdx];
+  return '<svg width="'+w+'" height="'+h+'" viewBox="26 4 48 54">'
+    + hair
+    + '<rect x="32" y="24" width="36" height="28" fill="#F0C9A0"/>'
+    + '<rect x="40" y="34" width="6" height="6" fill="#141414"/>'
+    + '<rect x="58" y="34" width="6" height="6" fill="#141414"/>'
     + ACC_SVGS[accIdx]
     + '</svg>';
 }
@@ -499,6 +532,7 @@ function startGame(mode){
   if(mode==='fire'){
     document.getElementById('player').innerHTML = avatarSVGString;
   } else {
+    document.getElementById('tankAvatarHead').innerHTML = buildAvatarHeadSVG(16,16);
     initTankArena();
   }
 
@@ -620,15 +654,15 @@ function showCheckpoint(){
   opt1.classList.remove('ok','bad'); opt2.classList.remove('ok','bad');
 
   if(type==='image-word'){
-    promptEl.innerHTML='<svg width="80" height="80" viewBox="0 0 100 100">'+displayIcon(target,worldKey)+'</svg>';
+    promptEl.innerHTML=displayIcon(target,worldKey,80);
     subEl.textContent='¿cómo se dice en inglés?';
     opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
     opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
   } else if(type==='listen-point'){
     promptEl.innerHTML='<div class="speaker" onclick="speak(\''+target.en+'\')"><svg width="50" height="50" viewBox="0 0 60 60"><path d="M8,22 L8,38 L20,38 L34,50 L34,10 L20,22 Z" fill="#141414"/><path d="M40,20 Q48,30 40,40" stroke="#141414" stroke-width="4" fill="none" stroke-linecap="round"/></svg></div>';
     subEl.textContent='toca la imagen correcta';
-    opt1.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+displayIcon(optA,worldKey)+'</svg>'; opt1.dataset.correct=String(optA===target);
-    opt2.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+displayIcon(optB,worldKey)+'</svg>'; opt2.dataset.correct=String(optB===target);
+    opt1.innerHTML=displayIcon(optA,worldKey,60); opt1.dataset.correct=String(optA===target);
+    opt2.innerHTML=displayIcon(optB,worldKey,60); opt2.dataset.correct=String(optB===target);
     setTimeout(()=>speak(target.en),300);
   } else if(worldKey==='animals'){
     promptEl.innerHTML='<div class="speaker" onclick="speak(\''+target.sound+'\')"><svg width="50" height="50" viewBox="0 0 60 60"><path d="M8,22 L8,38 L20,38 L34,50 L34,10 L20,22 Z" fill="#141414"/><path d="M40,20 Q48,30 40,40" stroke="#141414" stroke-width="4" fill="none" stroke-linecap="round"/></svg></div>';
@@ -637,7 +671,7 @@ function showCheckpoint(){
     opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
     opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
   } else {
-    promptEl.innerHTML='<svg width="60" height="60" viewBox="0 0 100 100">'+target.ctxIcon+'</svg>';
+    promptEl.innerHTML=emojiImg(target.ctxEmoji,60);
     subEl.textContent='elige el color correcto';
     opt1.innerHTML='<span>'+optA.en+'</span>'; opt1.dataset.correct=String(optA===target);
     opt2.innerHTML='<span>'+optB.en+'</span>'; opt2.dataset.correct=String(optB===target);
@@ -738,6 +772,19 @@ function triggerNerdMode(){
     running=true; awaitingAnswer=false;
     requestAnimationFrame(tankLoop);
 
+    const sparkTimer=setInterval(()=>{
+      if(!tankNerdActive) return;
+      for(let s=0;s<3;s++){
+        const sp=document.createElement('div');
+        sp.className='nmspark';
+        const ang=Math.random()*Math.PI*2, dist=26+Math.random()*14;
+        sp.style.left=(tankX+19+Math.cos(ang)*dist)+'px';
+        sp.style.top=(tankY+19+Math.sin(ang)*dist)+'px';
+        document.getElementById('bulletLayer').appendChild(sp);
+        setTimeout(()=>sp.remove(),450);
+      }
+    },220);
+
     const duration=6000, start=Date.now();
     const timer=setInterval(()=>{
       const elapsed=Date.now()-start;
@@ -745,6 +792,7 @@ function triggerNerdMode(){
       label.textContent=left+'s';
       if(elapsed>=duration){
         clearInterval(timer);
+        clearInterval(sparkTimer);
         tankNerdActive=false;
         banner.classList.remove('show');
         document.getElementById('tankPlayer').classList.remove('nerdglow');
@@ -990,6 +1038,7 @@ document.getElementById('fireBtn').addEventListener('pointerdown', (e)=>{
 
 function tankLoop(){
   if(!running) return;
+  try{
 
   const stageW=stage.clientWidth, stageH=stage.clientHeight;
   const now=performance.now();
@@ -1067,18 +1116,31 @@ function tankLoop(){
     if(m.done) continue;
     if(now>=m.detonateAt){
       m.done=true;
-      explosionSound();
-      m.el.remove();
-      enemies.forEach(en=>{
-        if(en.hit) return;
-        const ddx=(en.x+20)-m.x, ddy=(en.y+13)-m.y;
-        if(Math.sqrt(ddx*ddx+ddy*ddy) < 70){ destroyEnemy(en); }
-      });
+      detonateMine(m);
       mines.splice(i,1);
     }
   }
 
+  }catch(err){
+    console.error('tankLoop error (juego sigue corriendo):', err);
+  }
   if(!awaitingAnswer) requestAnimationFrame(tankLoop);
+}
+
+function detonateMine(m){
+  explosionSound();
+  m.el.remove();
+  const boom=document.createElement('div');
+  boom.className='minefire';
+  boom.style.left=(m.x-40)+'px';
+  boom.style.top=(m.y-40)+'px';
+  document.getElementById('bulletLayer').appendChild(boom);
+  setTimeout(()=>boom.remove(),450);
+  enemies.forEach(en=>{
+    if(en.hit) return;
+    const ddx=(en.x+20)-m.x, ddy=(en.y+13)-m.y;
+    if(Math.sqrt(ddx*ddx+ddy*ddy) < 70){ destroyEnemy(en); }
+  });
 }
 
 function fireSound(){
