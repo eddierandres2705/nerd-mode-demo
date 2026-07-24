@@ -56,6 +56,13 @@
   #playerFacing{transform:scaleX(var(--fx,1));}
   @keyframes walkbob{0%,100%{transform:scaleX(var(--fx,1)) translateY(0) rotate(0deg)} 50%{transform:scaleX(var(--fx,1)) translateY(-3px) rotate(3deg)}}
   @media (prefers-reduced-motion:no-preference){ #playerFacing.walking{animation:walkbob .28s ease-in-out infinite;} }
+  @keyframes legswingL{0%,100%{transform:rotate(-20deg)} 50%{transform:rotate(20deg)}}
+  @keyframes legswingR{0%,100%{transform:rotate(20deg)} 50%{transform:rotate(-20deg)}}
+  .legL,.legR{transform-box:fill-box; transform-origin:50% 0%;}
+  @media (prefers-reduced-motion:no-preference){
+    #playerFacing.walking .legL{animation:legswingL .28s ease-in-out infinite;}
+    #playerFacing.walking .legR{animation:legswingR .28s ease-in-out infinite;}
+  }
   @keyframes jumpsquish{0%{transform:scaleX(var(--fx,1)) scaleY(1)} 30%{transform:scaleX(var(--fx,1)) scaleY(1.15)} 100%{transform:scaleX(var(--fx,1)) scaleY(1)}}
   @media (prefers-reduced-motion:no-preference){ #playerFacing.jumpfx{animation:jumpsquish .35s ease-out;} }
   @media (prefers-reduced-motion:no-preference){ #player svg.hit{animation:stumble .35s ease;} }
@@ -586,14 +593,12 @@ function pickBodyType(type, btn){
 function bodyMarkup(){
   if(bodyType===1){
     return '<path d="M40,54 L60,54 L74,112 L26,112 Z" fill="'+shirtColor+'"/>'
-      + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
-      + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>';
+      + '<g class="legL"><rect x="30" y="114" width="20" height="10" fill="#141414"/></g>'
+      + '<g class="legR"><rect x="54" y="114" width="20" height="10" fill="#141414"/></g>';
   }
   return '<rect x="28" y="54" width="44" height="36" fill="'+shirtColor+'"/>'
-    + '<rect x="32" y="92" width="16" height="24" fill="#2C2C2A"/>'
-    + '<rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/>'
-    + '<rect x="30" y="114" width="20" height="10" fill="#141414"/>'
-    + '<rect x="54" y="114" width="20" height="10" fill="#141414"/>';
+    + '<g class="legL"><rect x="32" y="92" width="16" height="24" fill="#2C2C2A"/><rect x="30" y="114" width="20" height="10" fill="#141414"/></g>'
+    + '<g class="legR"><rect x="56" y="92" width="16" height="24" fill="#2C2C2A"/><rect x="54" y="114" width="20" height="10" fill="#141414"/></g>';
 }
 
 function buildAvatarSVG(w,h){
@@ -800,6 +805,7 @@ function fallIntoPit(pitWx){
   if(playerFalling) return;
   playerFalling=true;
   jumping=false; vel=0;
+  moveLeftFlag=false; moveRightFlag=false;
   hitSound();
   let fallY=0;
   const fallInt=setInterval(()=>{
@@ -1064,6 +1070,8 @@ function fireLevelCleared(){
 function loop(){
   if(!running){ return; }
   try{
+
+  const now=performance.now();
 
   if(moveLeftFlag) playerWX=Math.max(0, playerWX-MOVE_SPEED);
   if(moveRightFlag) playerWX=Math.min(LEVEL_LEN-34, playerWX+MOVE_SPEED);
