@@ -29,7 +29,7 @@
   .tabbar{display:flex; border-bottom:2px solid #E5E4DC; width:100%; max-width:260px; margin-bottom:14px;}
   .tab{flex:1; text-align:center; padding:8px 0; font-family:var(--body); font-size:12px; color:#9A9A96; border-bottom:3px solid transparent; cursor:pointer;}
   .tab.active{color:var(--carbon); font-family:var(--display); font-weight:700; border-bottom-color:var(--red);}
-  .swrow{display:flex; gap:10px; width:100%; max-width:260px; justify-content:center;}
+  .swrow{display:flex; gap:10px; width:100%; max-width:280px; justify-content:center; flex-wrap:wrap;}
   .sw{width:52px; height:52px; border-radius:10px; background:#fff; border:2px solid #C9CACC; padding:0; display:flex; align-items:center; justify-content:center; color:var(--carbon);}
   .sw.circ{border-radius:50%;}
   .sw.picked{border-color:var(--carbon); border-width:3px;}
@@ -46,12 +46,39 @@
   #score{font-family:var(--display); font-weight:700; font-size:13px; color:var(--carbon); background:rgba(255,255,255,0.7); padding:4px 10px; border-radius:8px;}
 
   #stage{position:relative; width:100%; height:100%; background:var(--bone); overflow:hidden;}
-  #ground{position:absolute; left:0; right:0; bottom:18%; height:2px; background:var(--silver);}
+  #groundLayer{position:absolute; inset:0;}
+  .groundseg{position:absolute; bottom:18%; height:8px; background:#8A5A32; border-top:3px solid #3FA796;}
+  .pitshadow{position:absolute; bottom:0; height:18%; background:#141414;}
+  #castleLayer{position:absolute; inset:0; pointer-events:none;}
   #player{position:absolute; left:14%; bottom:18%; width:34px; height:48px; transform:translateY(0);}
   #player svg{display:block;}
   @keyframes stumble{0%,100%{transform:translateX(0)}30%{transform:translateX(-8px)}60%{transform:translateX(4px)}}
   @media (prefers-reduced-motion:no-preference){ #player svg.hit{animation:stumble .35s ease;} }
   .obstacle{position:absolute; bottom:18%; width:28px; height:40px; background:var(--red); border-radius:4px 4px 0 0;}
+  .obstacle.tall{background:#993C1D; border-top:4px solid #F5C518;}
+
+  #screen-game:not(.mode-tank) #stage{background:linear-gradient(180deg,#BEE3F5 0%, #E8F5E0 75%);}
+  #fireParallaxFar,#fireParallaxNear{position:absolute; inset:0; height:100%; pointer-events:none;}
+  .hill{position:absolute; bottom:16%; background:#BFE3D4; border-radius:50% 50% 0 0;}
+  .cloud{position:absolute; width:70px; height:26px; background:#fff; border-radius:20px; opacity:0.85;}
+  @media (prefers-reduced-motion:no-preference){ .cloud{animation:cloudbob 4s ease-in-out infinite;} }
+  @keyframes cloudbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .rock{position:absolute; bottom:18%; width:30px;}
+  .rock svg{display:block;}
+  #castle{position:absolute; bottom:18%;}
+  #castle svg{display:block;}
+  .fireenemy{position:absolute; bottom:18%; width:34px; height:30px; filter:drop-shadow(0 3px 2px rgba(0,0,0,0.2));}
+  .fireenemy svg{display:block;}
+  @media (prefers-reduced-motion:no-preference){ .fireenemy.boom{animation:boom .3s ease forwards;} }
+
+  #fireControls{display:flex; position:absolute; bottom:16px; right:16px; z-index:8;}
+  #screen-game.mode-tank #fireControls{display:none;}
+  #moveJoystick{position:absolute; bottom:14px; left:14px; z-index:8;}
+  #fireMoveBtns{display:flex; gap:10px;}
+  .fctrlbtn{width:56px; height:56px; border-radius:12px; padding:0; background:linear-gradient(180deg,#ffffff,#d8d8d2); border:2px solid var(--carbon); border-bottom-width:5px; box-shadow:0 3px 0 rgba(0,0,0,0.15); touch-action:none;}
+  .fctrlbtn.pressed{border-bottom-width:2px; transform:translateY(3px);}
+  #jumpBtn{width:72px; height:72px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #5FC2AC, #2C8C78); border:3px solid var(--carbon); border-bottom-width:7px; box-shadow:0 4px 0 rgba(0,0,0,0.2); touch-action:none;}
+  #jumpBtn.pressed{border-bottom-width:3px; transform:translateY(4px);}
 
   #tapHint{position:absolute; bottom:6%; left:0; right:0; text-align:center; font-size:12px; color:var(--gray); font-family:var(--body);}
 
@@ -87,24 +114,23 @@
   .ebullet{position:absolute; width:9px; height:9px; border-radius:50%; background:#993C1D; box-shadow:0 0 4px #D8432E;}
   .hitflash{position:absolute; inset:0; background:#D8432E; opacity:0; pointer-events:none; z-index:9;}
   .hitflash.show{opacity:0.35; transition:opacity .5s ease;}
+  .invisible{opacity:0.35;}
 
   .nmbanner{position:absolute; top:12px; left:50%; transform:translateX(-50%) translateY(-60px); display:flex; gap:8px; align-items:center; background:#141414; color:#EF9F27; font-family:var(--display); font-weight:700; font-size:13px; padding:6px 14px; border-radius:20px; border:2px solid #EF9F27; z-index:7; transition:transform .3s ease; pointer-events:none;}
   .mapbanner{position:absolute; top:40%; left:50%; transform:translate(-50%,-50%) scale(0.7); opacity:0; background:#141414; color:#3FA796; font-family:var(--display); font-weight:700; font-size:20px; padding:16px 28px; border-radius:16px; border:3px solid #3FA796; z-index:9; transition:transform .3s ease, opacity .3s ease; pointer-events:none;}
   .mapbanner.show{transform:translate(-50%,-50%) scale(1); opacity:1;}
   .nmbanner.show{transform:translateX(-50%) translateY(0);}
   #nm-banner-seconds{font-family:var(--body); font-weight:400; color:#F5F5F0; font-size:12px;}
-  @media (prefers-reduced-motion:no-preference){ #tankPlayer.nerdglow{animation:dashglow .5s ease-in-out infinite;} }
+  @media (prefers-reduced-motion:no-preference){ .nerdglow{animation:dashglow .5s ease-in-out infinite;} }
 
   #tankHud{display:flex; gap:5px;}
   .life-dot{width:14px; height:10px; border-radius:2px; background:var(--red); border:1.5px solid var(--carbon);}
   .life-dot.lost{background:transparent; border-color:#C9CACC;}
 
-  #tankControls{display:none; position:absolute; bottom:10px; left:10px; right:10px; z-index:8; align-items:flex-end; justify-content:space-between;}
-  #screen-game.mode-tank #tankControls{display:flex;}
-  #dpad{display:grid; grid-template-columns:repeat(3, 46px); grid-template-rows:repeat(3, 46px); grid-template-areas:". up ." "left . right" ". down .";}
-  .dbtn{width:100%; height:100%; padding:0; border-radius:10px; background:linear-gradient(180deg, #ffffff, #d8d8d2); color:var(--carbon); border:2px solid var(--carbon); border-bottom-width:5px; box-shadow:0 3px 0 rgba(0,0,0,0.15); touch-action:none;}
-  .dbtn svg{pointer-events:none;}
-  .dbtn.pressed{border-bottom-width:2px; transform:translateY(3px); background:linear-gradient(180deg, #d8d8d2, #c2c2ba);}
+  #tankControls{display:none; position:absolute; bottom:14px; right:14px; z-index:8;}
+  #screen-game.mode-tank #tankControls{display:block;}
+  #joystick{width:120px; height:120px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #e8e8e2, #b8b8b0); border:3px solid var(--carbon); box-shadow:inset 0 3px 8px rgba(0,0,0,0.25); position:relative; touch-action:none;}
+  #joyknob{position:absolute; width:52px; height:52px; border-radius:50%; background:linear-gradient(180deg,#fff,#d0d0c8); border:3px solid var(--carbon); left:50%; top:50%; transform:translate(-50%,-50%); box-shadow:0 3px 4px rgba(0,0,0,0.3); pointer-events:none;}
 
   #actionBtns{display:flex; flex-direction:column; align-items:center; gap:10px;}
   #fireBtn{width:70px; height:70px; border-radius:50%; padding:0; background:radial-gradient(circle at 35% 30%, #E8664D, #A32A1C); border:3px solid var(--carbon); border-bottom-width:7px; box-shadow:0 4px 0 rgba(0,0,0,0.2); touch-action:none;}
@@ -201,6 +227,7 @@
         <button class="sw" onclick="pickHair(1,this)"><svg viewBox="20 -2 60 32" width="34" height="16"><rect x="30" y="14" width="40" height="8" fill="#3B2A1E"/><polygon points="32,14 38,2 44,14" fill="#3B2A1E"/><polygon points="46,14 52,2 58,14" fill="#3B2A1E"/><polygon points="60,14 66,2 72,14" fill="#3B2A1E"/></svg></button>
         <button class="sw" onclick="pickHair(2,this)"><svg viewBox="20 0 70 40" width="34" height="16"><rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/></svg></button>
         <button class="sw" onclick="pickHair(3,this)"><svg viewBox="18 0 70 44" width="34" height="16"><rect x="30" y="10" width="40" height="10" fill="#3B2A1E"/><rect x="20" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/><rect x="70" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/></svg></button>
+        <button class="sw" onclick="pickHair(4,this)"><svg viewBox="18 0 70 62" width="34" height="16"><rect x="30" y="10" width="40" height="12" fill="#3B2A1E"/><rect x="22" y="14" width="10" height="46" rx="4" fill="#3B2A1E"/><rect x="68" y="14" width="10" height="46" rx="4" fill="#3B2A1E"/></svg></button>
       </div>
 
       <div class="swrow" id="row-shirt" style="display:none;">
@@ -208,12 +235,16 @@
         <button class="sw circ" style="background:#3FA796;" onclick="pickShirt('#3FA796',this)"></button>
         <button class="sw circ" style="background:#7C6AE8;" onclick="pickShirt('#7C6AE8',this)"></button>
         <button class="sw circ" style="background:#EF9F27;" onclick="pickShirt('#EF9F27',this)"></button>
+        <button class="sw circ" style="background:#E888A8;" onclick="pickShirt('#E888A8',this)"></button>
+        <button class="sw circ" style="background:#8FDDBF;" onclick="pickShirt('#8FDDBF',this)"></button>
       </div>
 
       <div class="swrow" id="row-acc" style="display:none;">
         <button class="sw picked" onclick="pickAcc(0,this)"><span style="font-family:var(--body); font-size:11px;">Ninguno</span></button>
         <button class="sw" onclick="pickAcc(1,this)"><svg viewBox="30 28 50 20" width="34" height="16"><rect x="38" y="36" width="8" height="4" fill="#141414"/><rect x="56" y="36" width="8" height="4" fill="#141414"/><rect x="46" y="37" width="10" height="2" fill="#141414"/></svg></button>
         <button class="sw" onclick="pickAcc(2,this)"><svg viewBox="20 5 60 30" width="34" height="16"><rect x="28" y="10" width="44" height="10" fill="#993C1D"/><rect x="28" y="18" width="44" height="8" fill="#141414"/></svg></button>
+        <button class="sw" onclick="pickAcc(3,this)"><svg viewBox="35 3 30 20" width="34" height="16"><polygon points="42,8 50,14 42,20" fill="#D8432E"/><polygon points="58,8 50,14 58,20" fill="#D8432E"/><circle cx="50" cy="14" r="4" fill="#993C1D"/></svg></button>
+        <button class="sw" onclick="pickAcc(4,this)"><svg viewBox="55 5 30 22" width="34" height="16"><circle cx="66" cy="18" r="4" fill="#E888A8"/><circle cx="70" cy="14" r="4" fill="#E888A8"/><circle cx="70" cy="22" r="4" fill="#E888A8"/><circle cx="74" cy="18" r="4" fill="#E888A8"/><circle cx="70" cy="18" r="3" fill="#F5C518"/></svg></button>
       </div>
 
       <button onclick="goStep2()" style="margin-top:18px;">Siguiente</button>
@@ -250,21 +281,30 @@
       <div id="dots">
         <div class="dot" id="dot1"></div><div class="dot" id="dot2"></div><div class="dot" id="dot3"></div>
       </div>
-      <div id="tankHud" class="tank-el">
+      <div id="tankHud">
         <div class="life-dot" id="life1"></div><div class="life-dot" id="life2"></div><div class="life-dot" id="life3"></div>
       </div>
       <div id="score">0</div>
       <button onclick="openMap()" style="width:auto; padding:4px 10px; font-size:11px; border-width:1.5px;">Mapa</button>
     </div>
     <div id="stage">
-      <div id="ground" class="fire-el"></div>
+      <div id="fireParallaxFar" class="fire-el"></div>
+      <div id="fireParallaxNear" class="fire-el"></div>
+      <div id="groundLayer" class="fire-el"></div>
+      <div id="castleLayer" class="fire-el"></div>
+      <div id="fireObstacleLayer" class="fire-el"></div>
+      <div id="fireEnemyLayer" class="fire-el"></div>
       <div id="player" class="fire-el"></div>
-      <div id="tapHint" class="fire-el">toca para saltar</div>
+      <div id="nm-banner-fire" class="fire-el nmbanner">
+        <span>NERD MODE</span>
+        <span id="nm-banner-fire-seconds"></span>
+      </div>
+      <div id="fire-level-banner" class="fire-el mapbanner"></div>
 
       <div id="wallLayer" class="tank-el"></div>
       <div id="enemyLayer" class="tank-el"></div>
       <div id="bulletLayer" class="tank-el"></div>
-      <div id="hitFlash" class="tank-el hitflash"></div>
+      <div id="hitFlash" class="hitflash"></div>
       <div id="nm-banner-tank" class="tank-el nmbanner">
         <span>NERD MODE</span>
         <span id="nm-banner-seconds"></span>
@@ -290,13 +330,13 @@
       </div>
     </div>
 
-    <div id="tankControls" class="tank-el">
-      <div id="dpad">
-        <button class="dbtn" id="dbtn-up" style="grid-area:up;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,3 17,15 3,15" fill="#141414"/></svg></button>
-        <button class="dbtn" id="dbtn-left" style="grid-area:left;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="3,10 15,3 15,17" fill="#141414"/></svg></button>
-        <button class="dbtn" id="dbtn-right" style="grid-area:right;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="17,10 5,3 5,17" fill="#141414"/></svg></button>
-        <button class="dbtn" id="dbtn-down" style="grid-area:down;"><svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,17 3,5 17,5" fill="#141414"/></svg></button>
+    <div id="moveJoystick">
+      <div id="joystick">
+        <div id="joyknob"></div>
       </div>
+    </div>
+
+    <div id="tankControls" class="tank-el">
       <div id="actionBtns">
         <button id="turboBtn">
           <svg width="24" height="24" viewBox="0 0 120 120"><path d="M 64,20 L 40,64 L 54,64 L 48,100 L 82,56 L 66,56 Z" fill="#141414"/></svg>
@@ -308,6 +348,10 @@
           <svg width="32" height="32" viewBox="0 0 60 60"><circle cx="30" cy="30" r="20" fill="none" stroke="#F5F5F0" stroke-width="3"/><circle cx="30" cy="30" r="4" fill="#F5F5F0"/><line x1="30" y1="2" x2="30" y2="14" stroke="#F5F5F0" stroke-width="3"/><line x1="30" y1="46" x2="30" y2="58" stroke="#F5F5F0" stroke-width="3"/><line x1="2" y1="30" x2="14" y2="30" stroke="#F5F5F0" stroke-width="3"/><line x1="46" y1="30" x2="58" y2="30" stroke="#F5F5F0" stroke-width="3"/></svg>
         </button>
       </div>
+    </div>
+
+    <div id="fireControls" class="fire-el">
+      <button id="jumpBtn"><svg width="26" height="26" viewBox="0 0 20 20"><polygon points="10,3 17,15 3,15" fill="#F5F5F0"/></svg></button>
     </div>
 
     <div class="overlay" id="cp-overlay">
@@ -425,9 +469,15 @@ function bigChime(){
 
 // ---------- game state ----------
 let running=false, jumping=false, playerY=0, vel=0;
+let fireInvincible=false;
 const GRAVITY=-0.9, JUMP_VEL=13;
-let obstacles=[]; // {el, x}
-let lastSpawn=0, spawnGap=1600, speed=1.2;
+let fireObstacles=[];
+let fireEnemies=[];
+let firePits=[];
+let fireGroundSegs=[];
+let playerWX=40, camX=0, LEVEL_LEN=1400, fireLevelIndex=0;
+let moveLeftFlag=false, moveRightFlag=false;
+const MOVE_SPEED=3.2;
 let passed=0, streak=0, score=0;
 let awaitingAnswer=false;
 const stage=document.getElementById('stage');
@@ -492,12 +542,15 @@ const HAIR_SVGS=[
   '<rect x="30" y="10" width="40" height="14" fill="#3B2A1E"/>',
   '<rect x="30" y="14" width="40" height="8" fill="#3B2A1E"/><polygon points="32,14 38,2 44,14" fill="#3B2A1E"/><polygon points="46,14 52,2 58,14" fill="#3B2A1E"/><polygon points="60,14 66,2 72,14" fill="#3B2A1E"/>',
   '<rect x="30" y="10" width="38" height="12" fill="#3B2A1E"/><rect x="66" y="8" width="12" height="30" fill="#3B2A1E"/>',
-  '<rect x="30" y="10" width="40" height="10" fill="#3B2A1E"/><rect x="20" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/><rect x="70" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/>'
+  '<rect x="30" y="10" width="40" height="10" fill="#3B2A1E"/><rect x="20" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/><rect x="70" y="16" width="10" height="28" rx="4" fill="#3B2A1E"/>',
+  '<rect x="30" y="10" width="40" height="12" fill="#3B2A1E"/><rect x="22" y="14" width="10" height="46" rx="4" fill="#3B2A1E"/><rect x="68" y="14" width="10" height="46" rx="4" fill="#3B2A1E"/>'
 ];
 const ACC_SVGS=[
   '',
   '<rect x="38" y="36" width="8" height="4" fill="#141414"/><rect x="56" y="36" width="8" height="4" fill="#141414"/><rect x="46" y="37" width="10" height="2" fill="#141414"/>',
-  '<rect x="28" y="10" width="44" height="10" fill="#993C1D"/><rect x="28" y="18" width="44" height="8" fill="#141414"/>'
+  '<rect x="28" y="10" width="44" height="10" fill="#993C1D"/><rect x="28" y="18" width="44" height="8" fill="#141414"/>',
+  '<polygon points="42,8 50,14 42,20" fill="#D8432E"/><polygon points="58,8 50,14 58,20" fill="#D8432E"/><circle cx="50" cy="14" r="4" fill="#993C1D"/>',
+  '<circle cx="66" cy="18" r="4" fill="#E888A8"/><circle cx="70" cy="14" r="4" fill="#E888A8"/><circle cx="70" cy="22" r="4" fill="#E888A8"/><circle cx="74" cy="18" r="4" fill="#E888A8"/><circle cx="70" cy="18" r="3" fill="#F5C518"/>'
 ];
 let hairIdx=0, shirtColor='#D8432E', accIdx=0, bodyType=0;
 
@@ -597,14 +650,15 @@ function startGame(mode){
 
   if(mode==='fire'){
     document.getElementById('player').innerHTML = avatarSVGString;
+    lives=maxLives; invulnerable=false; fireInvincible=false;
+    updateLivesUI();
   } else {
     document.getElementById('tankAvatarHead').innerHTML = buildAvatarHeadSVG(16,16);
     initTankArena();
   }
 
   running=true;
-  lastSpawn=performance.now();
-  if(mode==='fire'){ requestAnimationFrame(loop); }
+  if(mode==='fire'){ fireLevelIndex=0; generateFireLevel(0); requestAnimationFrame(loop); }
   else { requestAnimationFrame(tankLoop); }
 }
 
@@ -620,7 +674,6 @@ function togglePause(){
     pausedManually=false;
     ov.classList.remove('show');
     running=true;
-    lastSpawn=performance.now();
     requestAnimationFrame(currentGame==='fire' ? loop : tankLoop);
   }
 }
@@ -652,20 +705,178 @@ function jump(){
   vel=JUMP_VEL;
 }
 
-document.getElementById('stage').addEventListener('pointerdown', jump);
+const jumpBtn=document.getElementById('jumpBtn');
+jumpBtn.addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  jumpBtn.classList.add('pressed');
+  jump();
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>jumpBtn.addEventListener(ev, ()=>jumpBtn.classList.remove('pressed')));
 
-function spawnObstacle(){
-  const el=document.createElement('div');
-  el.className='obstacle';
-  el.style.left='100%';
-  stage.appendChild(el);
-  obstacles.push({el, x: stage.clientWidth, hit:false});
+function playerHitFire(){
+  if(invulnerable) return;
+  lives--;
+  updateLivesUI();
+  const flash=document.getElementById('hitFlash');
+  flash.classList.add('show');
+  setTimeout(()=>flash.classList.remove('show'),300);
+  invulnerable=true;
+  setTimeout(()=>{ invulnerable=false; },1000);
+  if(lives<=0){
+    lives=maxLives;
+    updateLivesUI();
+  }
 }
 
-function loop(ts){
-  if(!running){ return; }
+function buildFireParallax(){
+  const far=document.getElementById('fireParallaxFar');
+  const near=document.getElementById('fireParallaxNear');
+  far.innerHTML=''; near.innerHTML='';
+  const w = LEVEL_LEN + 400;
+  far.style.width = w+'px';
+  near.style.width = w+'px';
+  for(let x=0; x<w; x+=220){
+    const hill=document.createElement('div');
+    hill.className='hill';
+    hill.style.left=x+'px';
+    hill.style.width=(160+Math.random()*80)+'px';
+    hill.style.height=(60+Math.random()*40)+'px';
+    far.appendChild(hill);
+  }
+  for(let x=60; x<w; x+=280){
+    const cloud=document.createElement('div');
+    cloud.className='cloud';
+    cloud.style.left=x+'px';
+    cloud.style.top=(10+Math.random()*40)+'px';
+    cloud.style.animationDelay=(Math.random()*2)+'s';
+    near.appendChild(cloud);
+  }
+}
 
-  // player physics
+function buildCastle(){
+  const layer=document.getElementById('castleLayer');
+  layer.innerHTML='';
+  layer.style.width=(LEVEL_LEN+400)+'px';
+  const cx=LEVEL_LEN-30;
+  const el=document.createElement('div');
+  el.id='castle';
+  el.style.left=(cx-100)+'px';
+  el.innerHTML='<svg width="160" height="150" viewBox="0 0 160 150">'
+    + '<rect x="10" y="60" width="140" height="80" fill="#C9CACC" stroke="#141414" stroke-width="3"/>'
+    + '<rect x="0" y="30" width="34" height="110" fill="#C9CACC" stroke="#141414" stroke-width="3"/>'
+    + '<rect x="126" y="30" width="34" height="110" fill="#C9CACC" stroke="#141414" stroke-width="3"/>'
+    + '<polygon points="0,30 17,8 34,30" fill="#993C1D" stroke="#141414" stroke-width="2"/>'
+    + '<polygon points="126,30 143,8 160,30" fill="#993C1D" stroke="#141414" stroke-width="2"/>'
+    + '<rect x="60" y="70" width="40" height="70" fill="#3B2A1E" stroke="#141414" stroke-width="2"/>'
+    + '<rect x="15" y="70" width="10" height="10" fill="#3B2A1E"/><rect x="135" y="70" width="10" height="10" fill="#3B2A1E"/>'
+    + '<line x1="17" y1="8" x2="17" y2="-14" stroke="#141414" stroke-width="2"/><polygon points="17,-14 34,-6 17,2" fill="#D8432E"/>'
+    + '</svg>';
+  layer.appendChild(el);
+}
+
+function generateFireLevel(idx){
+  document.getElementById('fireObstacleLayer').innerHTML='';
+  document.getElementById('fireEnemyLayer').innerHTML='';
+  document.getElementById('groundLayer').innerHTML='';
+  fireObstacles=[]; fireEnemies=[]; firePits=[];
+  LEVEL_LEN = 1500 + idx*400;
+  playerWX=40; camX=0; playerY=0; jumping=false; vel=0;
+  player.style.transform='translateY(0)';
+
+  // abismos a lo largo del nivel
+  let px=380;
+  while(px < LEVEL_LEN-250){
+    firePits.push({wx:px, w:56+Math.random()*30});
+    px += 320 + Math.random()*220;
+  }
+
+  // segmentos de suelo sólido entre abismos
+  const sorted=[...firePits].sort((a,b)=>a.wx-b.wx);
+  let segStart=0;
+  sorted.forEach(p=>{
+    addGroundSegment(segStart, p.wx-segStart);
+    segStart = p.wx+p.w;
+  });
+  addGroundSegment(segStart, (LEVEL_LEN+300)-segStart);
+
+  // obstáculos (rocas)
+  let x=250;
+  while(x < LEVEL_LEN-150){
+    const inPit = firePits.some(p=> x>p.wx-40 && x<p.wx+p.w+40);
+    if(!inPit){
+      const tall = Math.random()<0.35;
+      const el=document.createElement('div');
+      el.className='rock'+(tall?' tall':'');
+      el.style.height=(tall?60:36)+'px';
+      el.innerHTML='<svg width="30" height="'+(tall?60:36)+'" viewBox="0 0 30 40" preserveAspectRatio="none"><path d="M2,40 L4,14 L12,2 L22,4 L28,16 L26,40 Z" fill="'+(tall?'#7A6858':'#9A9C9E')+'" stroke="#141414" stroke-width="2"/></svg>';
+      document.getElementById('fireObstacleLayer').appendChild(el);
+      fireObstacles.push({el, wx:x, reqHeight: tall?55:26, hit:false, cleared:false});
+    }
+    x += 220 + Math.random()*140;
+  }
+
+  // enemigos (duendes)
+  x=420;
+  while(x < LEVEL_LEN-150){
+    const inPit = firePits.some(p=> x>p.wx-40 && x<p.wx+p.w+40);
+    if(!inPit){
+      const el=document.createElement('div');
+      el.className='fireenemy';
+      el.innerHTML='<svg width="32" height="30" viewBox="0 0 40 36"><ellipse cx="20" cy="22" rx="16" ry="13" fill="#4E8B4A"/><polygon points="6,14 2,2 14,10" fill="#4E8B4A"/><polygon points="34,14 38,2 26,10" fill="#4E8B4A"/><circle cx="14" cy="18" r="3" fill="#141414"/><circle cx="26" cy="18" r="3" fill="#141414"/><path d="M13,27 Q20,32 27,27" stroke="#141414" stroke-width="2" fill="none"/><rect x="6" y="30" width="9" height="6" rx="2" fill="#141414"/><rect x="25" y="30" width="9" height="6" rx="2" fill="#141414"/></svg>';
+      document.getElementById('fireEnemyLayer').appendChild(el);
+      fireEnemies.push({el, wx:x, baseX:x, range:50, dir:1, speed:0.6+Math.random()*0.4, hit:false});
+    }
+    x += 380 + Math.random()*160;
+  }
+
+  buildFireParallax();
+  buildCastle();
+  renderFireCamera();
+}
+
+function addGroundSegment(wx, width){
+  if(width<=0) return;
+  const el=document.createElement('div');
+  el.className='groundseg';
+  el.style.width=width+'px';
+  document.getElementById('groundLayer').appendChild(el);
+  fireGroundSegs.push({el, wx});
+}
+
+function renderFireCamera(){
+  const viewW=stage.clientWidth;
+  camX = Math.max(0, Math.min(playerWX-viewW/2, Math.max(0,LEVEL_LEN-viewW)));
+  player.style.left=(playerWX-camX)+'px';
+  fireObstacles.forEach(o=>{ o.el.style.left=(o.wx-camX)+'px'; });
+  fireEnemies.forEach(en=>{ if(!en.hit) en.el.style.left=(en.wx-camX)+'px'; });
+  fireGroundSegs.forEach(g=>{ g.el.style.left=(g.wx-camX)+'px'; });
+  document.getElementById('castle').style.left=(LEVEL_LEN-130-camX)+'px';
+  document.getElementById('fireParallaxFar').style.transform='translateX('+(-camX*0.3)+'px)';
+  document.getElementById('fireParallaxNear').style.transform='translateX('+(-camX*0.6)+'px)';
+}
+
+function fireLevelCleared(){
+  running=false;
+  const banner=document.getElementById('fire-level-banner');
+  banner.textContent = fireLevelIndex===0 ? '¡Llegaste al castillo!' : '¡Reino '+(fireLevelIndex+1)+' liberado!';
+  banner.classList.add('show');
+  bigChime();
+  setTimeout(()=>{
+    banner.classList.remove('show');
+    fireLevelIndex++;
+    generateFireLevel(fireLevelIndex);
+    running=true;
+    requestAnimationFrame(loop);
+  },2200);
+}
+
+function loop(){
+  if(!running){ return; }
+  try{
+
+  if(moveLeftFlag) playerWX=Math.max(0, playerWX-MOVE_SPEED);
+  if(moveRightFlag) playerWX=Math.min(LEVEL_LEN-34, playerWX+MOVE_SPEED);
+
   if(jumping){
     playerY += vel;
     vel += GRAVITY;
@@ -673,41 +884,73 @@ function loop(ts){
     player.style.transform='translateY('+(-playerY)+'px)';
   }
 
-  // spawn
-  if(ts-lastSpawn>spawnGap){
-    spawnObstacle();
-    lastSpawn=ts;
-  }
+  renderFireCamera();
 
-  // move obstacles
-  const stageW=stage.clientWidth;
-  const playerRect={left: stageW*0.14, right: stageW*0.14+34, bottom:18, height:48};
-
-  for(let i=obstacles.length-1;i>=0;i--){
-    const o=obstacles[i];
-    o.x -= speed*4;
-    o.el.style.left=o.x+'px';
-
-    // collision check (simple, only when not jumped high enough)
-    const oLeft=o.x, oRight=o.x+28;
-    if(oRight > playerRect.left && oLeft < playerRect.right && playerY<26 && !o.hit){
-      o.hit=true;
-      const svg=player.querySelector('svg');
-      svg.classList.remove('hit'); void svg.offsetWidth; svg.classList.add('hit');
-      tone([180,140]);
+  fireObstacles.forEach(o=>{
+    if(o.hit) return;
+    const overlap = playerWX+34>o.wx && playerWX<o.wx+28;
+    if(overlap){
+      if(fireInvincible){
+        o.hit=true; o.cleared=true;
+        o.el.style.transition='opacity .2s, transform .2s';
+        o.el.style.opacity='0'; o.el.style.transform='scale(1.6)';
+        tone([523,659]);
+        score++; passed++; document.getElementById('score').textContent=score;
+        if(passed%3===0 && !awaitingAnswer) showCheckpoint();
+      } else if(playerY<o.reqHeight){
+        o.hit=true; o.cleared=true;
+        const svg=player.querySelector('svg');
+        svg.classList.remove('hit'); void svg.offsetWidth; svg.classList.add('hit');
+        tone([180,140]);
+        playerHitFire();
+      }
+    } else if(!o.cleared && playerWX>o.wx+28){
+      o.cleared=true;
+      score++; passed++; document.getElementById('score').textContent=score;
+      if(passed%3===0 && !awaitingAnswer) showCheckpoint();
     }
+  });
 
-    if(o.x < -40){
-      o.el.remove();
-      obstacles.splice(i,1);
-      passed++;
-      if(!o.hit){ score++; document.getElementById('score').textContent=score; }
-      if(passed % 3 === 0 && !awaitingAnswer){
-        showCheckpoint();
+  fireEnemies.forEach(en=>{
+    if(en.hit) return;
+    en.wx += en.dir*en.speed;
+    if(en.wx < en.baseX-en.range || en.wx > en.baseX+en.range) en.dir*=-1;
+
+    const overlap = playerWX+34>en.wx && playerWX<en.wx+34;
+    if(overlap){
+      if(fireInvincible || playerY>22){
+        en.hit=true;
+        en.el.classList.add('boom');
+        setTimeout(()=>en.el.remove(),300);
+        tone([392,523]);
+        if(!fireInvincible){ vel=8; jumping=true; }
+        score++; passed++; document.getElementById('score').textContent=score;
+        if(passed%3===0 && !awaitingAnswer) showCheckpoint();
+      } else {
+        playerHitFire();
       }
     }
+  });
+
+  if(!fireInvincible){
+    firePits.forEach(p=>{
+      const overPit = playerWX+30>p.wx && playerWX<p.wx+p.w;
+      if(overPit && playerY<=4 && !invulnerable){
+        hitSound();
+        playerHitFire();
+        playerWX = Math.max(40, p.wx-45);
+      }
+    });
   }
 
+  if(playerWX >= LEVEL_LEN-60 && !awaitingAnswer && running){
+    fireLevelCleared();
+    return;
+  }
+
+  }catch(err){
+    console.error('fire loop error (el juego sigue corriendo):', err);
+  }
   if(!awaitingAnswer) requestAnimationFrame(loop);
 }
 
@@ -807,37 +1050,28 @@ function resetDots(){
 
 function triggerNerdMode(){
   if(currentGame==='fire'){
-    // arrasa los obstáculos que había en pantalla, como manda la fórmula del flip
-    obstacles.forEach(o=>{
-      o.el.style.transition='opacity .3s, transform .3s';
-      o.el.style.opacity='0';
-      o.el.style.transform='scale(1.4)';
-    });
-    setTimeout(()=>{ obstacles.forEach(o=>o.el.remove()); obstacles=[]; },300);
+    fireInvincible=true;
 
-    const ov=document.getElementById('nm-overlay');
-    ov.classList.add('show');
-    ov.style.backgroundColor='#FAEEDA';
-    ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.add('active'));
-    document.getElementById('nmBody').setAttribute('fill','#EF9F27');
-    document.getElementById('nm-text').style.opacity='1';
+    const pl=document.getElementById('player');
+    pl.classList.add('nerdglow');
+    const banner=document.getElementById('nm-banner-fire');
+    const label=document.getElementById('nm-banner-fire-seconds');
+    banner.classList.add('show');
     bigChime();
 
+    running=true; awaitingAnswer=false;
+    requestAnimationFrame(loop);
+
     const duration=6000, start=Date.now();
-    const label=document.getElementById('nm-seconds');
     const timer=setInterval(()=>{
       const elapsed=Date.now()-start;
       const left=Math.max(Math.ceil((duration-elapsed)/1000),0);
       label.textContent=left+'s';
       if(elapsed>=duration){
         clearInterval(timer);
-        ['ring1','ring2','ring3'].forEach(id=>document.getElementById(id).classList.remove('active'));
-        ov.classList.remove('show');
-        label.textContent='';
-        document.getElementById('nm-text').style.opacity='0';
-        lastSpawn=performance.now();
-        running=true;
-        requestAnimationFrame(loop);
+        fireInvincible=false;
+        banner.classList.remove('show');
+        pl.classList.remove('nerdglow');
       }
     },50);
 
@@ -848,7 +1082,7 @@ function triggerNerdMode(){
     setTimeout(()=>{
       if(tankNerdActive){ spawnEnemyPatrol(); spawnEnemyPatrol(); spawnEnemyPatrol(); }
     },150);
-    document.getElementById('tankPlayer').classList.add('nerdglow');
+    document.getElementById('tankPlayer').classList.add('nerdglow','invisible');
     bigChime();
 
     const banner=document.getElementById('nm-banner-tank');
@@ -881,7 +1115,7 @@ function triggerNerdMode(){
         clearInterval(sparkTimer);
         tankNerdActive=false;
         banner.classList.remove('show');
-        document.getElementById('tankPlayer').classList.remove('nerdglow');
+        document.getElementById('tankPlayer').classList.remove('nerdglow','invisible');
       }
     },50);
   }
@@ -938,13 +1172,15 @@ function initTankArena(){
   document.getElementById('tankPlayer').classList.remove('blink');
 
   const w=stage.clientWidth, h=stage.clientHeight;
-  tankX=w/2-19; tankY=h-70; tankDir='up'; moveFlags={up:false,down:false,left:false,right:false};
+  tankX=w/2-19; tankY=h-SAFE_BOTTOM-50; tankDir='up'; moveFlags={up:false,down:false,left:false,right:false};
   const tp=document.getElementById('tankPlayer');
   tp.style.left=tankX+'px'; tp.style.top=tankY+'px';
   tp.style.transform='rotate(0deg)';
 
   loadMap(0);
 }
+
+const SAFE_BOTTOM=140;
 
 function loadMap(idx){
   document.getElementById('enemyLayer').innerHTML='';
@@ -953,6 +1189,11 @@ function loadMap(idx){
   enemies=[]; bullets=[]; enemyBullets=[]; mines=[]; blasts=[];
 
   const w=stage.clientWidth, h=stage.clientHeight;
+  tankX=w/2-19; tankY=h-SAFE_BOTTOM-50; tankDir='up';
+  const tp=document.getElementById('tankPlayer');
+  tp.style.left=tankX+'px'; tp.style.top=tankY+'px';
+  tp.style.transform='rotate(0deg)';
+
   WALLS = MAP_LAYOUTS[idx % MAP_LAYOUTS.length](w,h);
   WALLS.forEach(wl=>{
     const el=document.createElement('div');
@@ -997,10 +1238,10 @@ function spawnEnemyPatrol(){
   el.className='enemy';
   el.innerHTML='<svg width="40" height="26" viewBox="0 0 60 40"><defs><linearGradient id="enemyGrad'+enemyGradId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C25A3E"/><stop offset="100%" stop-color="#7A2E1A"/></linearGradient></defs><rect x="4" y="13" width="52" height="3" fill="#4A1B0F"/><rect x="4" y="35" width="52" height="3" fill="#4A1B0F"/><rect x="6" y="14" width="48" height="18" rx="3" fill="url(#enemyGrad'+enemyGradId+')" stroke="#141414" stroke-width="2"/><rect x="10" y="17" width="34" height="2.5" fill="#E08A6E" opacity="0.6"/><circle cx="16" cy="32" r="4" fill="#141414"/><circle cx="30" cy="32" r="4" fill="#141414"/><circle cx="44" cy="32" r="4" fill="#141414"/><rect x="24" y="4" width="12" height="12" rx="2" fill="url(#enemyGrad'+enemyGradId+')" stroke="#141414" stroke-width="2"/></svg>';
   enemyGradId++;
-  const y=40+Math.random()*100;
+  const y=40+Math.random()*Math.max(60, stageW*0.3);
   const x=20+Math.random()*(stageW-60);
-  el.style.left=x+'px'; el.style.top=y+'px';
-  const obj={el, x, y, dir: Math.random()<0.5?1:-1, speed:(1+Math.random())*mapSpeedMult, hit:false};
+  el.style.left=x+'px'; el.style.top=Math.min(y, stage.clientHeight-SAFE_BOTTOM-26)+'px';
+  const obj={el, x, y: Math.min(y, stage.clientHeight-SAFE_BOTTOM-26), dir: Math.random()<0.5?1:-1, speed:(1+Math.random())*mapSpeedMult, hit:false};
   document.getElementById('enemyLayer').appendChild(el);
   enemies.push(obj);
 }
@@ -1066,10 +1307,17 @@ function playerHit(){
   if(lives<=0){
     lives=maxLives;
     updateLivesUI();
-    tankX=stage.clientWidth/2-19; tankY=stage.clientHeight-70;
-    const tp=document.getElementById('tankPlayer');
-    tp.style.left=tankX+'px'; tp.style.top=tankY+'px';
-    enemyBullets.forEach(b=>b.el.remove()); enemyBullets=[];
+    mapKills=0;
+    document.getElementById('score').textContent=score;
+    const banner=document.getElementById('map-banner');
+    banner.textContent='¡Te alcanzaron! Reiniciando la ronda...';
+    banner.style.borderColor='#D8432E'; banner.style.color='#D8432E';
+    banner.classList.add('show');
+    setTimeout(()=>{
+      banner.classList.remove('show');
+      banner.style.borderColor=''; banner.style.color='';
+      loadMap(mapIndex);
+    },1600);
   }
 }
 
@@ -1154,20 +1402,66 @@ document.getElementById('mineBtn').addEventListener('pointerdown', (e)=>{
   setTimeout(()=>b.classList.remove('pressed'),100);
 });
 
-['up','down','left','right'].forEach(dir=>{
-  const btn=document.getElementById('dbtn-'+dir);
-  btn.addEventListener('pointerdown', (e)=>{
-    e.preventDefault();
-    try{ btn.setPointerCapture(e.pointerId); }catch(err){}
-    moveFlags[dir]=true; tankDir=dir;
-    btn.classList.add('pressed');
-    document.getElementById('tankPlayer').style.transform='rotate('+DIRDEG[dir]+'deg)';
-  });
-  ['pointerup','pointerleave','pointercancel','lostpointercapture'].forEach(ev=>btn.addEventListener(ev, ()=>{ moveFlags[dir]=false; btn.classList.remove('pressed'); }));
+const joyBase=document.getElementById('joystick');
+const joyKnob=document.getElementById('joyknob');
+let joyActive=false;
+
+function joyUpdateFromEvent(e){
+  const rect=joyBase.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  let dx=e.clientX-cx, dy=e.clientY-cy;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const maxR=34;
+  const clamped=Math.min(dist,maxR);
+  const angle=Math.atan2(dy,dx);
+  joyKnob.style.transform='translate(calc(-50% + '+(Math.cos(angle)*clamped)+'px), calc(-50% + '+(Math.sin(angle)*clamped)+'px))';
+
+  if(currentGame==='fire'){
+    moveLeftFlag=false; moveRightFlag=false;
+    if(dist<18) return;
+    const dxNorm=Math.cos(angle);
+    if(dxNorm>0.4) moveRightFlag=true;
+    else if(dxNorm<-0.4) moveLeftFlag=true;
+    return;
+  }
+
+  moveFlags={up:false,down:false,left:false,right:false};
+  if(dist<20) return; // zona muerta central
+
+  const deg=angle*180/Math.PI; // -180..180, 0=derecha, 90=abajo
+  let dir;
+  if(deg>-45 && deg<=45) dir='right';
+  else if(deg>45 && deg<=135) dir='down';
+  else if(deg>135 || deg<=-135) dir='left';
+  else dir='up';
+  moveFlags[dir]=true; tankDir=dir;
+  document.getElementById('tankPlayer').style.transform='rotate('+DIRDEG[dir]+'deg)';
+}
+
+joyBase.addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  try{ joyBase.setPointerCapture(e.pointerId); }catch(err){}
+  joyActive=true;
+  joyUpdateFromEvent(e);
 });
+joyBase.addEventListener('pointermove', (e)=>{
+  if(!joyActive) return;
+  joyUpdateFromEvent(e);
+});
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>joyBase.addEventListener(ev, ()=>{
+  joyActive=false;
+  moveFlags={up:false,down:false,left:false,right:false};
+  moveLeftFlag=false; moveRightFlag=false;
+  joyKnob.style.transform='translate(-50%,-50%)';
+}));
 
 // seguro de respaldo: si la pestaña pierde el foco, se sueltan todas las direcciones
-window.addEventListener('blur', ()=>{ moveFlags={up:false,down:false,left:false,right:false}; document.querySelectorAll('.dbtn').forEach(b=>b.classList.remove('pressed')); });
+window.addEventListener('blur', ()=>{
+  joyActive=false;
+  moveFlags={up:false,down:false,left:false,right:false};
+  moveLeftFlag=false; moveRightFlag=false;
+  joyKnob.style.transform='translate(-50%,-50%)';
+});
 document.getElementById('fireBtn').addEventListener('pointerdown', (e)=>{
   e.preventDefault();
   fireBullet();
@@ -1191,7 +1485,7 @@ function tankLoop(){
   if(dx!==0 || dy!==0){
     const speed = turboActive ? 6.5 : 3;
     let nx=Math.max(0, Math.min(stageW-38, tankX+dx*speed));
-    let ny=Math.max(0, Math.min(stageH-38, tankY+dy*speed));
+    let ny=Math.max(0, Math.min(stageH-38-SAFE_BOTTOM, tankY+dy*speed));
     if(!collidesWithWalls(nx,ny,38,38)){
       tankX=nx; tankY=ny;
       const tp=document.getElementById('tankPlayer');
@@ -1228,7 +1522,7 @@ function tankLoop(){
     if(b.x<-10 || b.x>stageW+10 || b.y<-10 || b.y>stageH+10){
       b.el.remove(); enemyBullets.splice(i,1); continue;
     }
-    if(b.x>tankX && b.x<tankX+38 && b.y>tankY && b.y<tankY+38){
+    if(!tankNerdActive && b.x>tankX && b.x<tankX+38 && b.y>tankY && b.y<tankY+38){
       b.el.remove(); enemyBullets.splice(i,1);
       playerHit();
     }
@@ -1241,7 +1535,7 @@ function tankLoop(){
     const dist=Math.sqrt(ddx*ddx+ddy*ddy)||1;
     if(dist>desiredRange){
       en.x += (ddx/dist)*en.speed;
-      en.y += (ddy/dist)*en.speed;
+      en.y = Math.min(en.y + (ddy/dist)*en.speed, stageH-SAFE_BOTTOM-26);
       en.el.style.left=en.x+'px'; en.el.style.top=en.y+'px';
     }
     if(!en.nextShot) en.nextShot = now + 1200 + Math.random()*1200;
