@@ -74,7 +74,10 @@
   #castle svg{display:block;}
   .fireenemy{position:absolute; bottom:18%; width:34px; height:30px; filter:drop-shadow(0 3px 2px rgba(0,0,0,0.2));}
   .fireenemy svg{display:block;}
-  #fireDragonEl{position:absolute; bottom:18%; width:110px; height:80px; filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3));}
+  #fireDragonEl{position:absolute; bottom:18%; width:130px; height:80px; filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3)); transition:transform .6s ease-in-out;}
+  @keyframes dragonhit{0%,100%{filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3)) brightness(1)} 50%{filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3)) brightness(2.2)}}
+  @media (prefers-reduced-motion:no-preference){ #fireDragonEl.dragonhit{animation:dragonhit .2s ease;} }
+  .fireball{position:absolute; bottom:20%; width:16px; height:16px; border-radius:50%; background:radial-gradient(circle, #FFEFA8, #EF9F27 60%, #D8432E); box-shadow:0 0 8px #D8432E;}
   #fireDragonEl svg{display:block;}
   @media (prefers-reduced-motion:no-preference){ .fireenemy.boom{animation:boom .3s ease forwards;} }
 
@@ -491,9 +494,11 @@ let fireEnemies=[];
 let firePits=[];
 let fireGroundSegs=[];
 let fireDragon=null;
+let fireDragonBalls=[];
 let playerWX=40, camX=0, LEVEL_LEN=1400, fireLevelIndex=0;
 let moveLeftFlag=false, moveRightFlag=false;
 let facingDir=1;
+let playerFalling=false;
 const MOVE_SPEED=3.2;
 let passed=0, streak=0, score=0;
 let awaitingAnswer=false;
@@ -778,8 +783,8 @@ function attack(){
     const inFront = facingDir>0 ? (d.wx>playerWX-20 && d.wx<playerWX+34+reach) : (d.wx<playerWX && d.wx>playerWX-reach);
     if(inFront){
       d.hp--;
-      d.el.style.transition='transform .15s'; d.el.style.transform='scale(1.15)';
-      setTimeout(()=>{ d.el.style.transform='scale(1)'; },150);
+      d.el.classList.remove('dragonhit'); void d.el.offsetWidth; d.el.classList.add('dragonhit');
+      roarSound();
       if(d.hp<=0){
         d.hit=true;
         d.el.classList.add('boom');
@@ -789,6 +794,27 @@ function attack(){
       }
     }
   }
+}
+
+function fallIntoPit(pitWx){
+  if(playerFalling) return;
+  playerFalling=true;
+  jumping=false; vel=0;
+  hitSound();
+  let fallY=0;
+  const fallInt=setInterval(()=>{
+    fallY+=9;
+    player.style.transform='translateY('+fallY+'px)';
+    if(fallY>85){
+      clearInterval(fallInt);
+      player.style.transform='translateY(0)';
+      playerY=0;
+      playerWX=Math.max(40, pitWx-45);
+      renderFireCamera();
+      playerHitFire();
+      playerFalling=false;
+    }
+  },25);
 }
 
 function playerHitFire(){
@@ -806,7 +832,17 @@ function playerHitFire(){
   }
 }
 
-function buildFireParallax(){
+const REALM_PALETTES=[
+  {sky:['#5B4B7A','#8C7A9E'], hill:'#4A3B63', cloud:'#C9B8DE'},
+  {sky:['#7A3B2E','#D8843F'], hill:'#8A4A2E', cloud:'#F5C98A'},
+  {sky:['#E8C874','#F5E9D0'], hill:'#D9C79A', cloud:'#FFFFFF'},
+  {sky:['#BEE3F5','#E8F5E0'], hill:'#BFE3D4', cloud:'#FFFFFF'}
+];
+
+function buildFireParallax(idx){
+  const pal=REALM_PALETTES[idx % REALM_PALETTES.length];
+  stage.style.background='linear-gradient(180deg,'+pal.sky[0]+' 0%,'+pal.sky[1]+' 75%)';
+
   const far=document.getElementById('fireParallaxFar');
   const near=document.getElementById('fireParallaxNear');
   far.innerHTML=''; near.innerHTML='';
@@ -819,6 +855,7 @@ function buildFireParallax(){
     hill.style.left=x+'px';
     hill.style.width=(160+Math.random()*80)+'px';
     hill.style.height=(60+Math.random()*40)+'px';
+    hill.style.background=pal.hill;
     far.appendChild(hill);
   }
   for(let x=60; x<w; x+=280){
@@ -827,6 +864,7 @@ function buildFireParallax(){
     cloud.style.left=x+'px';
     cloud.style.top=(10+Math.random()*40)+'px';
     cloud.style.animationDelay=(Math.random()*2)+'s';
+    cloud.style.background=pal.cloud;
     near.appendChild(cloud);
   }
 }
@@ -856,7 +894,7 @@ function generateFireLevel(idx){
   document.getElementById('fireObstacleLayer').innerHTML='';
   document.getElementById('fireEnemyLayer').innerHTML='';
   document.getElementById('groundLayer').innerHTML='';
-  fireObstacles=[]; fireEnemies=[]; firePits=[];
+  fireObstacles=[]; fireEnemies=[]; firePits=[]; fireDragonBalls=[];
   LEVEL_LEN = 1500 + idx*400;
   playerWX=40; camX=0; playerY=0; jumping=false; vel=0;
   player.style.transform='translateY(0)';
@@ -907,27 +945,35 @@ function generateFireLevel(idx){
     x += 380 + Math.random()*160;
   }
 
-  buildFireParallax();
+  buildFireParallax(idx);
   buildCastle();
 
   const dragonEl=document.createElement('div');
   dragonEl.id='fireDragonEl';
-  dragonEl.innerHTML='<svg width="110" height="80" viewBox="0 0 150 100">'
-    + '<path d="M55,60 Q40,90 70,95 Q110,98 130,80 Q140,68 128,58 Q100,45 80,50 Q62,52 55,60 Z" fill="#3B82F6"/>'
-    + '<path d="M60,64 Q50,80 68,90 Q95,95 118,80 Q108,74 90,72 Q70,70 60,64 Z" fill="#E8664D"/>'
-    + '<path d="M85,52 Q100,20 130,18 Q125,32 118,38 Q135,32 145,42 Q130,48 118,50 Q135,50 140,58 Q120,62 105,58 Q95,56 85,52 Z" fill="#D8432E"/>'
-    + '<path d="M90,54 L100,34 L104,50 L112,36 L110,52 L120,42" fill="none" stroke="#993C1D" stroke-width="2"/>'
-    + '<ellipse cx="34" cy="48" rx="22" ry="17" fill="#3B82F6"/>'
-    + '<path d="M18,38 Q10,20 20,10 Q26,22 24,34 Z" fill="#E3B04B"/>'
-    + '<path d="M30,34 Q26,14 38,8 Q40,22 34,32 Z" fill="#E3B04B"/>'
-    + '<polygon points="8,44 -4,40 6,52" fill="#3B82F6"/>'
-    + '<circle cx="24" cy="46" r="4" fill="#D8432E"/><circle cx="24" cy="46" r="2" fill="#141414"/>'
-    + '<path d="M55,60 Q35,66 30,84 L26,96 L38,90 Q42,76 55,66 Z" fill="#3B82F6"/>'
-    + '<path d="M115,80 Q126,86 122,96 L132,92 Q130,80 118,74 Z" fill="#D8432E"/>'
-    + '<rect x="42" y="82" width="9" height="16" rx="3" fill="#3B82F6"/><rect x="70" y="88" width="9" height="14" rx="3" fill="#3B82F6"/>'
+  dragonEl.innerHTML='<svg width="130" height="80" viewBox="0 0 200 120">'
+    + '<ellipse cx="125" cy="68" rx="22" ry="14" fill="#3B82F6"/>'
+    + '<ellipse cx="155" cy="58" rx="16" ry="10" fill="#3B82F6"/>'
+    + '<ellipse cx="178" cy="48" rx="10" ry="7" fill="#3B82F6"/>'
+    + '<polygon points="182,45 198,36 191,52" fill="#D8432E"/>'
+    + '<polygon points="186,56 202,54 193,66" fill="#D8432E"/>'
+    + '<rect x="95" y="82" width="14" height="30" rx="6" fill="#3B82F6"/>'
+    + '<rect x="65" y="82" width="14" height="30" rx="6" fill="#3B82F6"/>'
+    + '<ellipse cx="90" cy="65" rx="45" ry="30" fill="#3B82F6"/>'
+    + '<path d="M55,75 Q70,90 100,85 Q80,70 65,60 Q55,62 55,75 Z" fill="#E8664D"/>'
+    + '<rect x="48" y="80" width="14" height="32" rx="6" fill="#3B82F6"/>'
+    + '<rect x="30" y="78" width="14" height="32" rx="6" fill="#3B82F6"/>'
+    + '<polygon points="35,35 30,20 42,32" fill="#D8432E"/>'
+    + '<polygon points="48,32 45,16 56,28" fill="#D8432E"/>'
+    + '<polygon points="62,30 60,14 70,26" fill="#D8432E"/>'
+    + '<path d="M60,45 Q55,15 90,10 Q85,25 95,20 Q110,15 115,25 Q105,28 112,35 Q120,32 122,42 Q108,42 100,48 Q90,52 78,50 Q66,50 60,45 Z" fill="#D8432E"/>'
+    + '<ellipse cx="35" cy="55" rx="20" ry="16" fill="#3B82F6"/>'
+    + '<path d="M20,50 Q3,52 0,59 Q8,61 18,58 Z" fill="#3B82F6" id="dragonSnout"/>'
+    + '<path d="M22,42 Q15,25 25,18 Q28,32 30,42 Z" fill="#E3B04B"/>'
+    + '<path d="M34,40 Q30,22 42,16 Q42,30 40,40 Z" fill="#E3B04B"/>'
+    + '<circle cx="28" cy="52" r="4" fill="#D8432E"/><circle cx="28" cy="52" r="2" fill="#141414"/>'
     + '</svg>';
   document.getElementById('fireEnemyLayer').appendChild(dragonEl);
-  fireDragon={el:dragonEl, wx:LEVEL_LEN-180, hp:2, hit:false};
+  fireDragon={el:dragonEl, wx:LEVEL_LEN-180, baseY:0, hp:3, hit:false, flying:false, nextFireball:0, nextFlyToggle:0};
 
   const realms=['Bosques de Sombras','Montañas de Fuego','Ciudadela del Alba','Reino de Eryndor'];
   const realmBanner=document.getElementById('realm-banner');
@@ -958,6 +1004,38 @@ function renderFireCamera(){
   document.getElementById('castle').style.left=(LEVEL_LEN-130-camX)+'px';
   document.getElementById('fireParallaxFar').style.transform='translateX('+(-camX*0.3)+'px)';
   document.getElementById('fireParallaxNear').style.transform='translateX('+(-camX*0.6)+'px)';
+}
+
+function roarSound(){
+  const ctx=getAudioCtx();
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(90, ctx.currentTime);
+  o.frequency.linearRampToValueAtTime(50, ctx.currentTime+0.4);
+  g.gain.setValueAtTime(0.001, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(0.22, ctx.currentTime+0.08);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.5);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+0.5);
+}
+
+function fireballSound(){
+  const ctx=getAudioCtx();
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(520, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(140, ctx.currentTime+0.3);
+  g.gain.setValueAtTime(0.2, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.32);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime+0.35);
+}
+
+function dragonShootFireball(){
+  if(!fireDragon || fireDragon.hit) return;
+  fireballSound();
+  const el=document.createElement('div');
+  el.className='fireball';
+  document.getElementById('fireEnemyLayer').appendChild(el);
+  fireDragonBalls.push({el, wx: fireDragon.wx+10});
 }
 
 function announceDragonDefeat(){
@@ -1059,23 +1137,35 @@ function loop(){
   if(!fireInvincible){
     firePits.forEach(p=>{
       const overPit = playerWX+34>p.wx-4 && playerWX<p.wx+p.w+4;
-      if(overPit && playerY<=6 && !invulnerable){
-        hitSound();
-        playerHitFire();
-        playerWX = Math.max(40, p.wx-45);
+      if(overPit && playerY<=6 && !invulnerable && !playerFalling){
+        fallIntoPit(p.wx);
       }
     });
   }
 
   if(fireDragon && !fireDragon.hit){
     const d=fireDragon;
-    const overlap = playerWX+34>d.wx && playerWX<d.wx+90;
+
+    if(!d.nextFlyToggle) d.nextFlyToggle = now + 3000 + Math.random()*2000;
+    if(now > d.nextFlyToggle){
+      d.flying = !d.flying;
+      d.el.style.transform = d.flying ? 'translateY(-38px)' : 'translateY(0)';
+      d.nextFlyToggle = now + 3000 + Math.random()*2500;
+    }
+
+    const distToPlayer = Math.abs(playerWX - d.wx);
+    if(!d.nextFireball) d.nextFireball = now + 2500;
+    if(now > d.nextFireball && distToPlayer < 380){
+      dragonShootFireball();
+      d.nextFireball = now + 2200 + Math.random()*1400;
+    }
+
+    const overlap = playerWX+34>d.wx && playerWX<d.wx+110;
     if(overlap){
       if(fireInvincible || playerY>22){
         d.hp--;
-        d.el.style.transition='transform .15s'; d.el.style.transform='scale(1.15)';
-        setTimeout(()=>{ d.el.style.transform='scale(1)'; },150);
-        tone([392,523]);
+        d.el.classList.remove('dragonhit'); void d.el.offsetWidth; d.el.classList.add('dragonhit');
+        roarSound();
         if(!fireInvincible){ vel=8; jumping=true; }
         if(d.hp<=0){
           d.hit=true;
@@ -1088,6 +1178,20 @@ function loop(){
         playerHitFire();
         playerWX = Math.max(40, d.wx-40);
       }
+    }
+  }
+
+  for(let i=fireDragonBalls.length-1;i>=0;i--){
+    const fb=fireDragonBalls[i];
+    fb.wx -= 4.2;
+    fb.el.style.left=(fb.wx-camX)+'px';
+    if(fb.wx < playerWX-120){
+      fb.el.remove(); fireDragonBalls.splice(i,1);
+      continue;
+    }
+    if(!fireInvincible && !invulnerable && Math.abs(fb.wx-(playerWX+17))<20){
+      fb.el.remove(); fireDragonBalls.splice(i,1);
+      playerHitFire();
     }
   }
 
