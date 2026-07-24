@@ -53,6 +53,11 @@
   #player{position:absolute; left:14%; bottom:18%; width:34px; height:48px; transform:translateY(0);}
   #player svg{display:block;}
   @keyframes stumble{0%,100%{transform:translateX(0)}30%{transform:translateX(-8px)}60%{transform:translateX(4px)}}
+  #playerFacing{transform:scaleX(var(--fx,1));}
+  @keyframes walkbob{0%,100%{transform:scaleX(var(--fx,1)) translateY(0) rotate(0deg)} 50%{transform:scaleX(var(--fx,1)) translateY(-3px) rotate(3deg)}}
+  @media (prefers-reduced-motion:no-preference){ #playerFacing.walking{animation:walkbob .28s ease-in-out infinite;} }
+  @keyframes jumpsquish{0%{transform:scaleX(var(--fx,1)) scaleY(1)} 30%{transform:scaleX(var(--fx,1)) scaleY(1.15)} 100%{transform:scaleX(var(--fx,1)) scaleY(1)}}
+  @media (prefers-reduced-motion:no-preference){ #playerFacing.jumpfx{animation:jumpsquish .35s ease-out;} }
   @media (prefers-reduced-motion:no-preference){ #player svg.hit{animation:stumble .35s ease;} }
   .obstacle{position:absolute; bottom:18%; width:28px; height:40px; background:var(--red); border-radius:4px 4px 0 0;}
   .obstacle.tall{background:#993C1D; border-top:4px solid #F5C518;}
@@ -69,6 +74,8 @@
   #castle svg{display:block;}
   .fireenemy{position:absolute; bottom:18%; width:34px; height:30px; filter:drop-shadow(0 3px 2px rgba(0,0,0,0.2));}
   .fireenemy svg{display:block;}
+  #fireDragonEl{position:absolute; bottom:18%; width:70px; height:60px; filter:drop-shadow(0 4px 3px rgba(0,0,0,0.3));}
+  #fireDragonEl svg{display:block;}
   @media (prefers-reduced-motion:no-preference){ .fireenemy.boom{animation:boom .3s ease forwards;} }
 
   #fireControls{display:flex; position:absolute; bottom:16px; right:16px; z-index:8;}
@@ -475,8 +482,10 @@ let fireObstacles=[];
 let fireEnemies=[];
 let firePits=[];
 let fireGroundSegs=[];
+let fireDragon=null;
 let playerWX=40, camX=0, LEVEL_LEN=1400, fireLevelIndex=0;
 let moveLeftFlag=false, moveRightFlag=false;
+let facingDir=1;
 const MOVE_SPEED=3.2;
 let passed=0, streak=0, score=0;
 let awaitingAnswer=false;
@@ -649,7 +658,13 @@ function startGame(mode){
   document.getElementById('screen-game').classList.toggle('mode-tank', mode==='tank');
 
   if(mode==='fire'){
-    document.getElementById('player').innerHTML = avatarSVGString;
+    document.getElementById('player').innerHTML =
+      '<div id="playerFacing" style="position:relative; width:34px; height:48px;">'
+      + avatarSVGString
+      + '<svg width="14" height="30" viewBox="0 0 14 30" style="position:absolute; left:24px; top:12px;"><rect x="5" y="0" width="4" height="18" fill="#C9CACC" stroke="#141414" stroke-width="1"/><rect x="1" y="16" width="12" height="5" rx="1" fill="#8A5A32" stroke="#141414" stroke-width="1"/><rect x="5" y="21" width="4" height="8" fill="#3B2A1E"/></svg>'
+      + '<svg width="20" height="14" viewBox="0 0 100 70" style="position:absolute; left:7px; top:17px;"><path d="M28,2 L72,2 L78,34 L50,50 L22,34 Z" fill="none" stroke="#C9CACC" stroke-width="8"/></svg>'
+      + '</div>';
+    facingDir=1;
     lives=maxLives; invulnerable=false; fireInvincible=false;
     updateLivesUI();
   } else {
@@ -703,6 +718,8 @@ function jump(){
   if(currentGame!=='fire' || !running || jumping) return;
   jumping=true;
   vel=JUMP_VEL;
+  const pf=document.getElementById('playerFacing');
+  if(pf){ pf.classList.remove('jumpfx'); void pf.offsetWidth; pf.classList.add('jumpfx'); }
 }
 
 const jumpBtn=document.getElementById('jumpBtn');
@@ -831,6 +848,13 @@ function generateFireLevel(idx){
 
   buildFireParallax();
   buildCastle();
+
+  const dragonEl=document.createElement('div');
+  dragonEl.id='fireDragonEl';
+  dragonEl.innerHTML='<svg width="70" height="60" viewBox="0 0 90 76"><ellipse cx="45" cy="46" rx="30" ry="20" fill="#993C1D"/><polygon points="10,30 2,4 26,20" fill="#7A2E1A"/><polygon points="80,30 88,4 64,20" fill="#7A2E1A"/><ellipse cx="20" cy="30" rx="14" ry="12" fill="#993C1D"/><circle cx="14" cy="26" r="3" fill="#EF9F27"/><polygon points="6,22 2,10 12,18" fill="#993C1D"/><path d="M70,50 Q90,58 84,72" stroke="#993C1D" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M18,42 Q6,50 4,64" stroke="#993C1D" stroke-width="3" fill="none"/><path d="M2,64 L4,58 L8,64 L6,70 Z" fill="#D8432E"/></svg>';
+  document.getElementById('fireEnemyLayer').appendChild(dragonEl);
+  fireDragon={el:dragonEl, wx:LEVEL_LEN-180, hp:2, hit:false};
+
   renderFireCamera();
 }
 
@@ -850,6 +874,7 @@ function renderFireCamera(){
   fireObstacles.forEach(o=>{ o.el.style.left=(o.wx-camX)+'px'; });
   fireEnemies.forEach(en=>{ if(!en.hit) en.el.style.left=(en.wx-camX)+'px'; });
   fireGroundSegs.forEach(g=>{ g.el.style.left=(g.wx-camX)+'px'; });
+  if(fireDragon && !fireDragon.hit) fireDragon.el.style.left=(fireDragon.wx-camX)+'px';
   document.getElementById('castle').style.left=(LEVEL_LEN-130-camX)+'px';
   document.getElementById('fireParallaxFar').style.transform='translateX('+(-camX*0.3)+'px)';
   document.getElementById('fireParallaxNear').style.transform='translateX('+(-camX*0.6)+'px)';
@@ -876,6 +901,17 @@ function loop(){
 
   if(moveLeftFlag) playerWX=Math.max(0, playerWX-MOVE_SPEED);
   if(moveRightFlag) playerWX=Math.min(LEVEL_LEN-34, playerWX+MOVE_SPEED);
+
+  const pf=document.getElementById('playerFacing');
+  if(pf){
+    if(moveLeftFlag || moveRightFlag){
+      facingDir = moveLeftFlag ? -1 : 1;
+      pf.style.setProperty('--fx', facingDir);
+      pf.classList.add('walking');
+    } else {
+      pf.classList.remove('walking');
+    }
+  }
 
   if(jumping){
     playerY += vel;
@@ -934,8 +970,8 @@ function loop(){
 
   if(!fireInvincible){
     firePits.forEach(p=>{
-      const overPit = playerWX+30>p.wx && playerWX<p.wx+p.w;
-      if(overPit && playerY<=4 && !invulnerable){
+      const overPit = playerWX+34>p.wx-4 && playerWX<p.wx+p.w+4;
+      if(overPit && playerY<=6 && !invulnerable){
         hitSound();
         playerHitFire();
         playerWX = Math.max(40, p.wx-45);
@@ -943,7 +979,30 @@ function loop(){
     });
   }
 
-  if(playerWX >= LEVEL_LEN-60 && !awaitingAnswer && running){
+  if(fireDragon && !fireDragon.hit){
+    const d=fireDragon;
+    const overlap = playerWX+34>d.wx && playerWX<d.wx+70;
+    if(overlap){
+      if(fireInvincible || playerY>22){
+        d.hp--;
+        d.el.style.transition='transform .15s'; d.el.style.transform='scale(1.15)';
+        setTimeout(()=>{ d.el.style.transform='scale(1)'; },150);
+        tone([392,523]);
+        if(!fireInvincible){ vel=8; jumping=true; }
+        if(d.hp<=0){
+          d.hit=true;
+          d.el.classList.add('boom');
+          setTimeout(()=>d.el.remove(),300);
+          score+=3; document.getElementById('score').textContent=score;
+        }
+      } else {
+        playerHitFire();
+        playerWX = Math.max(40, d.wx-40);
+      }
+    }
+  }
+
+  if(playerWX >= LEVEL_LEN-60 && (!fireDragon || fireDragon.hit) && !awaitingAnswer && running){
     fireLevelCleared();
     return;
   }
@@ -1207,7 +1266,7 @@ function loadMap(idx){
     document.getElementById('wallLayer').appendChild(el);
   });
 
-  const count=Math.min(3+idx,6);
+  const count=Math.min(2+idx,6);
   for(let i=0;i<count;i++) spawnEnemyPatrol();
 }
 
@@ -1241,7 +1300,7 @@ function spawnEnemyPatrol(){
   const y=40+Math.random()*Math.max(60, stageW*0.3);
   const x=20+Math.random()*(stageW-60);
   el.style.left=x+'px'; el.style.top=Math.min(y, stage.clientHeight-SAFE_BOTTOM-26)+'px';
-  const obj={el, x, y: Math.min(y, stage.clientHeight-SAFE_BOTTOM-26), dir: Math.random()<0.5?1:-1, speed:(1+Math.random())*mapSpeedMult, hit:false};
+  const obj={el, x, y: Math.min(y, stage.clientHeight-SAFE_BOTTOM-26), dir: Math.random()<0.5?1:-1, speed:(0.6+Math.random()*0.6)*mapSpeedMult, hit:false};
   document.getElementById('enemyLayer').appendChild(el);
   enemies.push(obj);
 }
@@ -1538,8 +1597,8 @@ function tankLoop(){
       en.y = Math.min(en.y + (ddy/dist)*en.speed, stageH-SAFE_BOTTOM-26);
       en.el.style.left=en.x+'px'; en.el.style.top=en.y+'px';
     }
-    if(!en.nextShot) en.nextShot = now + 1200 + Math.random()*1200;
-    if(now > en.nextShot){
+    if(!en.nextShot) en.nextShot = now + Math.max(2600-mapIndex*300, 1000) + Math.random()*1200;
+    if(now > en.nextShot && !tankNerdActive){
       fireEnemyBullet(en);
       en.nextShot = now + 1800 + Math.random()*1400;
     }
